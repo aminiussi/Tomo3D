@@ -841,23 +841,23 @@ TomographicInversion3d::solve(int niter)
 				    if (log){
 					double graph_time = solver_global.graph_time() / CLOCKS_PER_SEC;
 					double bend_time  = solver_global.bend_time()  / CLOCKS_PER_SEC;
-					*log << "1=" << solver_global.step() << " 2=" << iset << " 3="
-					     << nb_data()-ndata_valid << " 4="
-					     << rms_tres_total << " 5=" << init_chi_total << " 6="
-					     << ndata_in[0] << " 7=" << rms_tres[0] << " 8=" << init_chi[0] << " 9="
-					     << ndata_in[1] << " 10=" << rms_tres[1] << " 11=" << init_chi[1] << " 12="
-					     << ndata_in[2] << " 13=" << rms_tres[2] << " 14=" << init_chi[2] << " 15="
-					     << ndata_in[3] << " 16=" << rms_tres[3] << " 17=" << init_chi[3] << " 18="
-					     << graph_time << " 19=" << bend_time << " 20="
-					     << weight_s_v << " 21=" << weight_s_d << " 22="
-					     << weight_s_ad << " 23=" << weight_s_ae << " 24="
-					     << wdv << " 25=" << wdd << " 26=" << wdad << " 27=" << wdae << " 28="
-					     << nlsqr << " 29=" << lsqr_iter << " 30=" << lsqr_time << " 31="
-					     << pred_chi << " 32=" << dv_norm << " 33=" << dd_norm << " 34="
-					     << dad_norm << " 35=" << dae_norm << " 36="
-					     << Lmvx << " 37=" << Lmvy << " 38=" << Lmvz << " 39=" << Lmdx << " 40=" << Lmdy << " 41="
-					     << Lmadx << " 42=" << Lmady << " 43=" << Lmadz << " 44="
-					     << Lmaex << " 45=" << Lmaey << " 46=" << Lmaez;//dv_norm, Lmvy, Lmvz
+					*log << "1:" << solver_global.step() << " 2:" << iset << " 3:"
+					     << nb_data()-ndata_valid << " 4:"
+					     << rms_tres_total << " 5:" << init_chi_total << " 6:"
+					     << ndata_in[0] << " 7:" << rms_tres[0] << " 8:" << init_chi[0] << " 9:"
+					     << ndata_in[1] << " 10:" << rms_tres[1] << " 11:" << init_chi[1] << " 12:"
+					     << ndata_in[2] << " 13:" << rms_tres[2] << " 14:" << init_chi[2] << " 15:"
+					     << ndata_in[3] << " 16:" << rms_tres[3] << " 17:" << init_chi[3] << " 18:"
+					     << graph_time << " 19:" << bend_time << " 20:"
+					     << weight_s_v << " 21:" << weight_s_d << " 22:"
+					     << weight_s_ad << " 23:" << weight_s_ae << " 24:"
+					     << wdv << " 25:" << wdd << " 26:" << wdad << " 27:" << wdae << " 28:"
+					     << nlsqr << " 29:" << lsqr_iter << " 30:" << lsqr_time << " 31:"
+					     << pred_chi << " 32:" << dv_norm << " 33:" << dd_norm << " 34:"
+					     << dad_norm << " 35:" << dae_norm << " 36:"
+					     << Lmvx << " 37:" << Lmvy << " 38:" << Lmvz << " 39:" << Lmdx << " 40:" << Lmdy << " 41:"
+					     << Lmadx << " 42:" << Lmady << " 43:" << Lmadz << " 44:"
+					     << Lmaex << " 45:" << Lmaey << " 46:" << Lmaez;//dv_norm, Lmvy, Lmvz
 					*log << endl;
 				    }
 				}
@@ -914,7 +914,7 @@ TomographicInversion3d::trace_path_processing(char mark, int bend_iter, int src,
     if (bend_iter < 0) {
 	cerr << "TomographicInversion3d::iteration = " << step << '\n'
 	     << "TomographicInversion3d::too many iterations required\n"
-	     << "TomographicInversion3d::for bending refinement of ray between (s,r)="
+	     << "TomographicInversion3d::for bending refinement of ray between (s,r):"
 	     << src << "," << rcv << '\n';
     }
 }

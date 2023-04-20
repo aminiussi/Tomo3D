@@ -72,9 +72,9 @@ public:
   // output functions
   void outMesh(ostream&, bool) const;
   void printElements(ostream&) const;
-  void printVGrid(ostream&,bool) const;
+  void printVGrid(ostream&,bool) const;//entra alguna vez?
   void printVGrid(ostream&,
-		  double,double,double,double,double,double,double,double,double) const;
+		  double,double,double,double,double,double,double,double,double) const;//entra alguna vez?
   void printMaskGrid(ostream&, const std::vector<int>&, bool) const;
   void printMaskGrid(ostream&, const Array1d<double>&, bool) const;
 

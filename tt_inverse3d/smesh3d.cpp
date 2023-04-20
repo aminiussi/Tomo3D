@@ -67,7 +67,6 @@ SlownessMesh3d::SlownessMesh3d(std::string const& fname) // Modified
         cerr << "SlownessMesh3d::cannot open " << fname << "\n";
         exit(1);
     }
-
     int szx, szy, szz;
     s >> szx >> szy >> szz >> p_water >> p_air;
     Mesh3d::resize(szx,szy,szz);
@@ -144,12 +143,14 @@ SlownessMesh3d::SlownessMesh3d(std::string const& fname) // Modified
                 if (vgrid(i,j,k)<=0){
                     cerr << "SlownessMesh3d: non-positive velocity v("
                          << i << "," << j << "," << k << ")=" << vgrid(i,j,k) << '\n';
+   		    cerr << "... in file: " << fname << "\n";
+
                     exit(1);
                 }
             }
         }
     }
-    
+
     commonNormKernel();
 }
 
@@ -192,7 +193,7 @@ SlownessMesh3d::zexp(Point3d const& p, int nodeIndex, double lz) const {
         return boost::optional<double>();
     }
 }
-        
+ 
 void SlownessMesh3d::set(const Array1d<double>& u) // Modified
 {
     assert(u.size() == nb_nodes());
@@ -201,17 +202,19 @@ void SlownessMesh3d::set(const Array1d<double>& u) // Modified
     for (int i=1; i<=nx(); i++){
         for (int j=1; j<=ny(); j++){
             for (int k=1; k<=nz(); k++){
-	      if(pgrid(i,j,k) <= 0.0){
-		cerr << "SlownessMesh3d::set: Zero or negative velocity encountered:\n";
-		cerr << "Node (i,j,k)=(" << i << "," << j << "," << k << ")\n";
-		cerr << "Node (nx,ny,nz)=(" << nx() << "," << ny() << "," << nz() << ")\n";
-		cerr << "pgrid(i,j,k)=" << pgrid(i,j,k) << "\n";
-		cerr << "Terminating.\n";
-		exit(1);
-	      }else{
+
                 pgrid(i,j,k) = u(N);
                 vgrid(i,j,k) = 1.0/pgrid(i,j,k);
                 N++;
+
+	      if(pgrid(i,j,k) <= 0.0){
+		cerr << "WARNING\n";
+		cerr << "SlownessMesh3d::set: Zero or negative velocity encountered:\n";
+		cerr << "Node (i,j,k)=(" << i << "," << j << "," << k << ")\n";
+		cerr << "Node (nx,ny,nz)=(" << nx() << "," << ny() << "," << nz() << ")\n";
+		cerr << "vgrid(i,j,k)=" << vgrid(i,j,k) << "\n";
+		cerr << "pgrid(i,j,k)=" << pgrid(i,j,k) << "\n";
+		cerr << "\n";
 	      }
             }
         }
@@ -225,14 +228,15 @@ void SlownessMesh3d::get(Array1d<double>& u) const // Modified
     for (int i=1; i<=nx(); ++i){
         for (int j=1; j<=ny(); ++j){
             for (int k=1; k<=nz(); ++k){
+                velocity_model.push_back(pgrid(i,j,k));
+
 	      if(pgrid(i,j,k) <= 0.0){
+		cerr << "WARNING\n";
 		cerr << "SlownessMesh3d::get: Zero or negative velocity encountered:\n";
 		cerr << "Node (i,j,k)=(" << i << "," << j << "," << k << ")\n";
+		cerr << "vgrid(i,j,k)=" << vgrid(i,j,k) << "\n";
 		cerr << "pgrid(i,j,k)=" << pgrid(i,j,k) << "\n";
-		cerr << "Terminating.\n";
-		exit(1);
-	      }else{
-                velocity_model.push_back(pgrid(i,j,k));
+		cerr << "\n";
 	      }
             }
         }
@@ -248,16 +252,19 @@ void SlownessMesh3d::vget(Array1d<double>& v) const // Modified
     for (int i=1; i<=nx(); i++){
         for (int j=1; j<=ny(); j++){
             for (int k=1; k<=nz(); k++){
-	      if(vgrid(i,j,k) <= 0.0){
-		cerr << "SlownessMesh3d::vget: Zero or negative velocity encountered:\n";
-		cerr << "Node (i,j,k)=(" << i << "," << j << "," << k << ")\n";
-		cerr << "pgrid(i,j,k)=" << pgrid(i,j,k) << "\n";
-		cerr << "Terminating.\n";
-		exit(1);
-	      }else{
+
                 v(N) = vgrid(i,j,k);
                 N++;
+
+	      if(vgrid(i,j,k) <= 0.0){
+		cerr << "WARNING\n";
+		cerr << "SlownessMesh3d::vget: Zero or negative velocity encountered:\n";
+		cerr << "Node (i,j,k)=(" << i << "," << j << "," << k << ")\n";
+		cerr << "vgrid(i,j,k)=" << vgrid(i,j,k) << "\n";
+		cerr << "pgrid(i,j,k)=" << pgrid(i,j,k) << "\n";
+		cerr << "\n";
 	      }
+
             }
         }
     }
@@ -713,12 +720,14 @@ double SlownessMesh3d::calc_ttime(int nsrc, int nrcv, bool ani) const // Modifie
 		}
                 pave1=pave2;
                 precut=cut;
-		
+
             }
         }
     }
 
     if (ttime<0){
+        cerr << "\n";
+        cerr << "TERMINATING DUE TO ERROR: \n";
         cerr << "SlownessMesh3d::calc_ttime - negative traveltime encountered for ("
              << nsrc << ", " << nrcv << ")\n";
 	cerr << "ttime=" << ttime << '\n';

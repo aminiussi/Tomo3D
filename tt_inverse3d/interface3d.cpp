@@ -70,22 +70,29 @@ Interface3d::Interface3d(std::string const& fn) //modified
 	}
     }
 
+//    for (int j=0; j<=nyr; j++){ cout << "Y nodes at" << fn << ": " << j << ", " << ypos[j] << ", " << nyr << ".\n"; }//ojo
+
     // sanity check
-    for (int i=2; i<=nxr; i++){
-	if (xpos[i-1]<=xpos[i-2]){
-	    cerr << "Interface3d: illegal ordering of x nodes at i=" << i 
-                 << ", positions: " << xpos[i-2] << ", "<< xpos[i-1] << ".\n";
-	    exit(1);
-	}
+    if(nxr>=2)	{
+
+	    for (int i=2; i<=nxr; i++){
+		if (xpos[i-1]<=xpos[i-2]){
+		    cerr << "Interface3d: illegal ordering of x nodes at i=" << i
+	                 << ", positions: " << xpos[i-2] << ", "<< xpos[i-1] << ".\n";
+		    exit(1);
+		}
+	    }
     }
+
     for (int j=2; j<=nyr; j++){
-	if (ypos[j-1]<=ypos[j-1-1]){
+	if (ypos[j-1]<=ypos[j-2]){
 	    cerr << "Interface3d: illegal ordering of y nodes at j=" << j
                  << ", positions: " << ypos[j-2] << ", "<< ypos[j-1] << ".\n";
 	    exit(1);
 	}
     }
     calc_slope();
+
 }
 
 
