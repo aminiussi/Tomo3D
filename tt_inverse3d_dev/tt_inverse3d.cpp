@@ -10,7 +10,6 @@
 #include <iostream>
 #include <fstream>
 #include <cstdio>
-#include <cstring>
 
 #include <sysexits.h>
 #include <unistd.h>
@@ -19,13 +18,14 @@
 #include "boost/mpi.hpp"
 #include "boost/program_options.hpp"
 
-#include "data_2d3d.hpp"
-
 #include "axb_solver.hpp"
 #include "in_house_solver.hpp"
 #include "in_house_omp_solver.hpp"
 #include "array.hpp"
 #include "inverse3d.hpp"
+
+#include "data_2d3d.hpp"
+
 
 void
 wait_debugger() {
@@ -47,22 +47,23 @@ int main(int argc, char** argv)
     bool forward=false;
     bool first_iter=false;
     double vred=0.0;
-
-    //char *meshfn, *datafn;//original
-    const char *meshfn, *datafn; //estela
-
-    bool get2d3d=false;		// estela
-    std::string meshfn3d; 	// estela
-    std::string datafn3d; 	// estela
-    std::string reflfn3d; 	// estela
-    std::string temp; 		// estela
-    std::string corr_velfn3d;	// estela
-    std::string corr_depfn3d;	// estela
-
-//	*synfn;
-//	std::string meshfn, datafn;
-
+//    char *meshfn, *datafn; //, *synfn;//original
 //    char *anidfn, *aniefn;
+
+    const char *meshfn, *datafn; //estela
+    bool get2d3d=false;         // estela
+    std::string meshfn3d;	// estela
+    std::string datafn3d;	// estela
+    std::string reflfn3d;	// estela
+    std::string temp;           // estela
+    std::string corr_velfn3d;   // estela
+    std::string corr_depfn3d;   // estela
+    std::string damp_velfn3d;   // estela
+    std::string str_add;        // estela
+    int cero=0, one=1;		//estela
+    int nxy=0,nzz=0;		//estela
+
+
     int xorder=3, yorder=3, zorder=3, nintp=8;
     double crit_len=-1, bend_cg_tol=1e-4, bend_br_tol=1e-7;
     double crit_chi=-1, lsqr_atol=1e-3;
@@ -80,7 +81,6 @@ int main(int argc, char** argv)
     std::string anidfn, aniefn;
     std::string logfile;
     std::string output_prefix = "inv_out";
-
     int outlevel=0;
     bool gotError=false;
     int verbosity_level = -1;
@@ -95,20 +95,26 @@ int main(int argc, char** argv)
     double wsad_min=-1, wsad_max=-1, dwsad=-1;
     double wsae_min=-1, wsae_max=-1, dwsae=-1;
     double max_dv=-1, max_dd=-1, max_dad=-1, max_dae=-1;
-    double wdv=0, wdd=0, wdad=0, wdae=0;
+    double wdv=-1, wdd=-1, wdad=-1, wdae=-1;
     double target_chisq=0;
     bool vlogscale=false, dlogscale=false;
     bool adlogscale=false, aelogscale=false;
     bool getCorrVel=false, getCorrDep=false;
     bool getCorrAniD=false, getCorrAniE=false;
-    //char *corr_velfn, *corr_depfn;//original
-    //char *corr_anidfn, *corr_aniefn;//original
+
+//    char *corr_velfn, *corr_depfn;//original
+//    char *corr_anidfn, *corr_aniefn;
+//    char *damp_velfn, *damp_anidfn, *damp_aniefn;
+
+
     const char *corr_velfn, *corr_depfn;
     const char *corr_anidfn, *corr_aniefn;
+    const char *damp_velfn, *damp_anidfn, *damp_aniefn;
+
+
     bool printFinalOnly=false;
     bool auto_damping=false, fixed_damping=false, jumping=false;
     bool getDamp3d=false, getDamp3dD=false, getDamp3dE=false;
-    char *damp_velfn, *damp_anidfn, *damp_aniefn;
 
     bool fv=false, fd=false, fad=false, fae=false;
 
@@ -118,8 +124,6 @@ int main(int argc, char** argv)
 
     std::string solver_name      = "default";
     std::string solver_trace_dir = ".";
-    std::string str_add;	// estela
-
     bool        solver_stats     = false;
     int         solver_trace_limit = -1;
 
@@ -150,16 +154,16 @@ int main(int argc, char** argv)
     for (int i=1; i<argc; i++){
         if (argv[i][0] == '-'){
             switch(argv[i][1]){
-	    case '2':
+            case '2':
                 get2d3d = true;
-		str_add="_3d";	// estela
+                str_add=".3d";  // estela
                 break;
 	    case 'M':
-		meshfn = &argv[i][2];//path del archivo del modelo de velocidad
+		meshfn = &argv[i][2];
 		getMesh = true;
 		break;
 	    case 'G':
-		datafn = &argv[i][2];//path del archivo de TT
+		datafn = &argv[i][2];
 		getData = true;
 		break;
 	    case 'p':
@@ -191,9 +195,31 @@ int main(int argc, char** argv)
 	    {
 		int tmp1a, tmp1b, tmp1c, tmp3;
 		double tmp2, tmp4, tmp5;
+
+                //Estela
+
+		if(get2d3d)	{
+
+                if (sscanf(&argv[i][2], "%d/%d/%lf/%d/%lf/%lf",
+                           &tmp1b, &tmp1c, &tmp2, &tmp3, &tmp4, &tmp5)==6){
+                    if (tmp1b>0 && tmp1c>0 && tmp2>0 && tmp3>0 && tmp4>0 && tmp5>0){
+                        xorder=1;
+                        yorder=tmp1b;
+                        zorder=tmp1c;
+                        crit_len=tmp2;
+                        nintp=tmp3;
+                        bend_cg_tol=tmp4;
+                        bend_br_tol=tmp5;
+                    }else{
+                        error("invalid -N option, ignored.\n");
+                    }
+                }
+
+		} else {
+
 		if (sscanf(&argv[i][2], "%d/%d/%d/%lf/%d/%lf/%lf",
 			   &tmp1a, &tmp1b, &tmp1c, &tmp2, &tmp3, &tmp4, &tmp5)==7){
-		    if (tmp1a>0 && tmp1b>0 && tmp1c>0 && tmp2>0 && tmp3>0 && tmp4>0 && tmp5>0){
+		    if (tmp1a>0 && tmp1b>0 && tmp1c>0 && tmp2>0 && tmp3 > 0 && tmp4>0 && tmp5>0){
 			xorder=tmp1a;
                         yorder=tmp1b;
                         zorder=tmp1c;
@@ -205,21 +231,12 @@ int main(int argc, char** argv)
 			error("invalid -N option, ignored.\n");
 		    }
 		}
-		//This has been added
-		if (sscanf(&argv[i][2], "%d/%d/%lf/%d/%lf/%lf",
-			   &tmp1a, &tmp1c, &tmp2, &tmp3, &tmp4, &tmp5)==7){
-		    if (tmp1a>0 && tmp1c>0 && tmp2>0 && tmp3>0 && tmp4>0 && tmp5>0){
-			xorder=1;
-                       	yorder=tmp1a;
-                        zorder=tmp1c;
-			crit_len=tmp2;
-			nintp=tmp3;
-			bend_cg_tol=tmp4;
-			bend_br_tol=tmp5;
-		    }else{
-			error("invalid -N option, ignored.\n");
-		    }
+
 		}
+
+//std::cout << "NUMEROS " << xorder << ", " << yorder << ", " << zorder << ", " << crit_len << ", " << nintp << ", " << bend_cg_tol << ", " << bend_br_tol << '\n';
+
+
 		break;
 	    }
 	    case 'P':
@@ -235,8 +252,7 @@ int main(int argc, char** argv)
 		doFullRefl = true;
 		break;
 	    case 'F':
-		reflfn = &argv[i][2];//path archivo reflectores
-		getRefl = true;
+		reflfn = &argv[i][2];
 		break;
 	    case 'd':
 		anidfn = &argv[i][2];
@@ -463,6 +479,8 @@ int main(int argc, char** argv)
 	}
     }
 
+// Aqui empiezan las llamadas a funciones
+
     if (solver_name == "omp")  {
         select_in_house_omp_solver();
     } else if (solver_name == "nothread" || solver_name == "default" )  {
@@ -548,46 +566,64 @@ int main(int argc, char** argv)
         }
     }
 
+
+/* Llamada a distintas funciones, se crea el objeto inv */
+
     if (get2d3d) {	//transformacion input de tomo2d a tomo3d
 
-		meshfn3d = meshfn; // Vp
-		meshfn3d += str_add;
 
-	        datafn3d = datafn; // TT
-		datafn3d += str_add;
+		if(getMesh)	{
+	                temp=meshfn;
+	                std::ifstream file_2d3d(temp);
+	                file_2d3d >> nxy >> nzz;
+       		        file_2d3d.close();
 
-	        reflfn3d = reflfn;
-		reflfn3d += str_add;
+                	meshfn3d = meshfn; // Vp
+                	meshfn3d += str_add;
+	                data_2d3d new_meshfn(nxy,nzz,meshfn,meshfn3d);
+	                new_meshfn.meshfn_2d3d(cero);
+	                meshfn = meshfn3d.c_str();
+		}
 
-		corr_velfn3d=corr_velfn;
-		corr_velfn3d +=str_add;
+		if(getData)	{
+	                datafn3d = datafn; // TT
+	                datafn3d += str_add;
+	                data_2d3d new_datafn(nxy,nzz,datafn,datafn3d);
+	                new_datafn.datafn_2d3d();
+	                datafn = datafn3d.c_str();
+		}
 
-		corr_depfn3d=corr_depfn;
-		corr_depfn3d +=str_add;
+		if(getCorrVel)	{
+	                corr_velfn3d=corr_velfn;
+        	        corr_velfn3d +=str_add;
+	                data_2d3d new_corr_velfn(nxy,nzz,corr_velfn,corr_velfn3d);
+	                new_corr_velfn.corr_velfn_2d3d();
+	                corr_velfn=corr_velfn3d.c_str();
+		}
 
-		temp=meshfn;
-		int nxy=0,nzz=0;
-		std::ifstream file_2d3d(temp);
-		file_2d3d >> nxy >> nzz;
-		file_2d3d.close();
+		if(getCorrDep)	{
+	                corr_depfn3d=corr_depfn;
+	                corr_depfn3d +=str_add;
+	                data_2d3d new_corr_depfn(nxy,nzz,corr_depfn,corr_depfn3d);
+	                new_corr_depfn.corr_depfn_2d3d();
+	                corr_depfn=corr_depfn3d.c_str();
+		}
 
-		data_2d3d new_meshfn(nxy,nzz,meshfn,meshfn3d);
-		data_2d3d new_datafn(nxy,nzz,datafn,datafn3d);
-		data_2d3d new_reflfn(nxy,nzz,reflfn,reflfn3d);
-		data_2d3d new_corr_velfn(nxy,nzz,corr_velfn,corr_velfn3d);
-		data_2d3d new_corr_depfn(nxy,nzz,corr_depfn,corr_depfn3d);
+                if(getRefl)     {
+                        reflfn3d = reflfn;
+                        reflfn3d += str_add;
+                        data_2d3d new_reflfn(nxy,nzz,reflfn,reflfn3d);
+                        new_reflfn.reflfn_2d3d();
+                        reflfn = reflfn3d;
+                }
 
-		new_meshfn.meshfn_2d3d();
-		new_datafn.datafn_2d3d();
-		new_reflfn.reflfn_2d3d();
-		new_corr_velfn.corr_velfn_2d3d();
-		new_corr_depfn.corr_depfn_2d3d();
-
-		meshfn = meshfn3d.c_str();
-		datafn = datafn3d.c_str();
-		reflfn = reflfn3d;
-		corr_velfn=corr_velfn3d.c_str();
-		corr_depfn=corr_depfn3d.c_str();
+                if(getDamp3d)     {
+                        damp_velfn3d = damp_velfn;
+                        damp_velfn3d += str_add;
+                        data_2d3d new_damp_velfn(nxy,nzz,damp_velfn,damp_velfn3d);
+                        new_damp_velfn.meshfn_2d3d(one);
+                        damp_velfn = damp_velfn3d.c_str();
+                }
 
     }
 
@@ -624,7 +660,6 @@ int main(int argc, char** argv)
 	  world.abort(EX_DATAERR);
         }
     } else {
-
         boost::shared_ptr<Interface3d> reflp(new Interface3d(reflfn));
 	inv.add_reflections(reflp);
 	inv.setReflWeight(refl_weight);
@@ -678,26 +713,27 @@ int main(int argc, char** argv)
 
     if (target_chisq>0) inv.targetChisq(target_chisq);
 
+
     // In this if-condition include anisotropy damping
     if (auto_damping){
-	if (max_dv>0) inv.DampVelocity(max_dv);
-	if (max_dd>0) inv.DampDepth(max_dd);
-	if (max_dad>0) inv.DampAniD(max_dad);
-	if (max_dae>0) inv.DampAniE(max_dae);
+        if (max_dv>0) inv.DampVelocity(max_dv);
+        if (max_dd>0) inv.DampDepth(max_dd);
+        if (max_dad>0) inv.DampAniD(max_dad);
+        if (max_dae>0) inv.DampAniE(max_dae);
     }else if (fixed_damping){
-	if (wdv>=0 && wdd>=0 && wdad>=0 && wdae>=0){
-	    inv.FixDamping(wdv,wdd,wdad,wdae);
-	    if (getDamp3d){
-		inv.Squeezing(damp_velfn);
-	    }
-	    if (getDamp3dD){
-		inv.SqueezingD(damp_anidfn);
-	    }
-	    if (getDamp3dE){
-		inv.SqueezingE(damp_aniefn);
-	    }
-	}
+            inv.FixDamping(wdv,wdd,wdad,wdae);
+            if (getDamp3d){
+                inv.Squeezing(damp_velfn);
+            }
+            if (getDamp3dD){
+                inv.SqueezingD(damp_anidfn);
+            }
+            if (getDamp3dE){
+                inv.SqueezingE(damp_aniefn);
+            }
     }
+
+
     if (jumping) inv.doJumping();
 
     if (forward){

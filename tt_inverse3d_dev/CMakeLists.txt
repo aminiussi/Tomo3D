@@ -107,7 +107,7 @@ target_link_libraries( offline_solver tomo3d)
 
 add_subdirectory(test)
 
-if (EXISTS ${CMAKE_SOURCE_DIR}/doc
-    AND ( NOT EXISTS ${CMAKE_SOURCE_DIR}/SKIP_DOC))
-  add_subdirectory(doc)
-endif()
+#if (EXISTS ${CMAKE_SOURCE_DIR}/doc
+#    AND ( NOT EXISTS ${CMAKE_SOURCE_DIR}/SKIP_DOC))
+#  add_subdirectory(doc)
+#endif()

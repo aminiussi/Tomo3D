@@ -19,13 +19,16 @@ data_2d3d :: data_2d3d(int nn, int nzz, std::string const& input2D, std::string 
 	char_xy=0;
 
         num=0,num0=0;num2=2;
+
+	num_x=1,num_y=2,num_z=2;
+	bati_min=0,bati_max=0;
         xmin=0,xmax=1;
         ymin=0,ymax=1;
         zmin=0,zmax=1;
         lx_top=1,lx_bot=1;
         ly_top=1,ly_bot=1;
         lz_top=1,lz_bot=1;
-        lxr=0,lyr=0;
+        lxr=0,lyr_min=0;lyr_max=0;
 
 	//apertura de archivos
         file.open(input2D);
@@ -41,11 +44,12 @@ data_2d3d :: ~data_2d3d() {
 
 }
 
-void data_2d3d :: meshfn_2d3d() {
+void data_2d3d :: meshfn_2d3d(int option) {
 
 // INPUT MODELO DE VELOCIDAD
 
-	file >> ny >> nz >> vw >> va;
+	if(option==0)file >> ny >> nz >> vw >> va;//lee Vp
+	if(option==1)file >> ny >> nz;	 	  //lee Damping
 
 // Asignacion memoria dinamica
 
@@ -53,9 +57,9 @@ void data_2d3d :: meshfn_2d3d() {
 	double* posY = new double [ny];
 	double* bat = new double [ny];
 	double* posZ = new double [nz];
-	double** vel = new double* [ny];
+	double** vel_damp = new double* [ny];
 	for(int j=0;j<ny;j++) {
-		vel[j]=new double[nz];
+		vel_damp[j]=new double[nz];
 	}
 
 // Lectura de archivo input 2D
@@ -74,14 +78,15 @@ void data_2d3d :: meshfn_2d3d() {
 
 	for (int j = 0; j < ny; j++){
 		for (int k = 0; k < nz; k++) {
-			file >> vel[j][k];
+			file >> vel_damp[j][k];
 		}
 	}
 
 // Escritura archivo 3D
 
 // Primera fila
-	file3D << nx << '\t' << ny << '\t' << nz << '\t' << vw << '\t' << va << '\n';
+	if(option==0)file3D << nx << '\t' << ny << '\t' << nz << '\t' << vw << '\t' << va << '\n';
+	if(option==1)file3D << nx << '\t' << ny << '\t' << nz << '\n';
 
 // Segunda fila: posX
 	file3D << plane  << '\n';
@@ -107,7 +112,7 @@ void data_2d3d :: meshfn_2d3d() {
 // Sexto bloque: velocidad
 	for(int j=0;j<ny;j++) {
 		for(int k=0;k<nz;k++) {
-			file3D << vel[j][k] << '\t';
+			file3D << vel_damp[j][k] << '\t';
 		}
 		file3D << '\n';
 	}
@@ -119,9 +124,9 @@ void data_2d3d :: meshfn_2d3d() {
 	delete[] bat;
 	delete[] posZ;
 	for(int j = 0; j < ny; j++) {
-	delete[] vel[j];
+	delete[] vel_damp[j];
 	}
-	delete[] vel;
+	delete[] vel_damp;
 
 }
 
@@ -161,70 +166,87 @@ void data_2d3d :: reflfn_2d3d() {
 
 void data_2d3d :: corr_velfn_2d3d() {
 
-        file >> num >> num;
+        file >> num_y >> num_z;
         file >> ymin >> ymax;
-        file >> num >> num;
+        file >> bati_min >> bati_max;
         file >> zmin >> zmax;
         file >> ly_top >> ly_bot;
         file >> ly_top >> ly_bot;
         file >> lz_top >> lz_bot;
         file >> lz_top >> lz_bot;
 
-        file3D << num2 << '\t' << num2 << '\t' << num2;
+        file3D << num_x << '\t' << num_y << '\t' << num_z;
         file3D << '\n';
         file3D << xmin << '\t' << xmax;
         file3D << '\n';
         file3D << ymin << '\t' << ymax;
         file3D << '\n';
-        file3D << num0 << '\t' << num0;
+        file3D << bati_min << '\t' << bati_max;
         file3D << '\n';
-        file3D << num0 << '\t' << num0;
-        file3D << '\n';
+
+	if(num_x==2) {
+		file3D << bati_min << '\t' << bati_max;
+        	file3D << '\n';
+	}
+
         file3D << zmin << '\t' << zmax;
         file3D << '\n';
         file3D << lx_top << '\t' << lx_bot;
         file3D << '\n';
         file3D << lx_top << '\t' << lx_bot;
         file3D << '\n';
-        file3D << lx_top << '\t' << lx_bot;
-        file3D << '\n';
-        file3D << lx_top << '\t' << lx_bot;
-        file3D << '\n';
-        file3D << ly_top << '\t' << ly_bot;
-        file3D << '\n';
-        file3D << ly_top << '\t' << ly_bot;
-        file3D << '\n';
-        file3D << ly_top << '\t' << ly_bot;
-        file3D << '\n';
-        file3D << ly_top << '\t' << ly_bot;
-        file3D << '\n';
-        file3D << lz_top << '\t' << lz_bot;
-        file3D << '\n';
-        file3D << lz_top << '\t' << lz_bot;
-        file3D << '\n';
-        file3D << lz_top << '\t' << lz_bot;
-        file3D << '\n';
-        file3D << lz_top << '\t' << lz_bot;
 
+	if(num_x==2) {
+		file3D << lx_top << '\t' << lx_bot;
+        	file3D << '\n';
+        	file3D << lx_top << '\t' << lx_bot;
+        	file3D << '\n';
+	}
+
+        file3D << ly_top << '\t' << ly_bot;
+        file3D << '\n';
+        file3D << ly_top << '\t' << ly_bot;
+        file3D << '\n';
+
+	if(num_x==2) {
+		file3D << ly_top << '\t' << ly_bot;
+       		file3D << '\n';
+        	file3D << ly_top << '\t' << ly_bot;
+        	file3D << '\n';
+	}
+
+        file3D << lz_top << '\t' << lz_bot;
+        file3D << '\n';
+        file3D << lz_top << '\t' << lz_bot;
+        file3D << '\n';
+
+	if(num_x==2) {
+		file3D << lz_top << '\t' << lz_bot;
+        	file3D << '\n';
+        	file3D << lz_top << '\t' << lz_bot;
+        	file3D << '\n';
+	}
 }
 
 void data_2d3d :: corr_depfn_2d3d() {
 
-	file >> ymin >> lyr;
-	file >> ymax >> lyr;
+	file >> ymin >> lyr_min;
+	file >> ymax >> lyr_max;
 
-	file3D << num2 << '\t' << num2;
+	file3D << num_x << '\t' << num_y;
 	file3D << '\n';
 
-	file3D << xmin << '\t'<< ymin << '\t' << lxr << '\t' << lyr;
+	file3D << xmin << '\t'<< ymin << '\t' << lxr << '\t' << lyr_min;
 	file3D << '\n';
 
-	file3D << xmin << '\t'<< ymax << '\t' << lxr << '\t' << lyr;
+	file3D << xmin << '\t'<< ymax << '\t' << lxr << '\t' << lyr_max;
 	file3D << '\n';
 
-	file3D << xmax << '\t' << ymin << '\t' << lxr << '\t' <<lyr;
-	file3D << '\n';
-
-	file3D << xmax << '\t' << ymax << '\t' << lxr << '\t' << lyr;
+	if(num_x==2) {
+		file3D << xmax << '\t' << ymin << '\t' << lxr << '\t' <<lyr_min;
+		file3D << '\n';
+		file3D << xmax << '\t' << ymax << '\t' << lxr << '\t' << lyr_max;
+		file3D << '\n';
+	}
 
 }

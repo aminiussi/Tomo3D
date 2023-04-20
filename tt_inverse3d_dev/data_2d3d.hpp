@@ -19,13 +19,16 @@ private:
         char            char_xy;
 
         int             num,num0,num2;
-        int             xmin,xmax;
-        int             ymin,ymax;
-        int             zmin,zmax;
-        int             lx_top,lx_bot;
-        int             ly_top,ly_bot;
-        int             lz_top,lz_bot;
-        int             lxr,lyr;
+	int		num_x,num_y,num_z;
+        double          xmin,xmax;
+        double          ymin,ymax;
+	double		bati_min,bati_max;
+        double          zmin,zmax;
+        double             lx_top,lx_bot;
+        double             ly_top,ly_bot;
+        double             lz_top,lz_bot;
+        double             lxr,lyr_min,lyr_max;
+	int 		option;
 
         char*     	input2D;
         char*     	input3D;
@@ -36,12 +39,11 @@ public:
 
 	data_2d3d(int nxx, int nzz, std::string const& input2D, std::string const& input3D);
 	~data_2d3d();
-	void meshfn_2d3d();
+	void meshfn_2d3d(int option);
 	void datafn_2d3d();
 	void reflfn_2d3d();
         void corr_velfn_2d3d();
         void corr_depfn_2d3d();
-
 
 };//class
 

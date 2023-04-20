@@ -1,6 +1,6 @@
 /*
  * inverse3d.cc based on inverse.cc
- *
+ * 
  * Adria Melendez and Jun Korenaga
  * Fall 2011
  */
@@ -37,7 +37,7 @@ TomographicInversion3d::TomographicInversion3d(boost::mpi::communicator& com,
     nz(slowness_mesh().nz()),
     my_velocity_model(),
     my_full_reflection_velocity_model(),
-    itermax_LSQR(nnodev*10), LSQR_ATOL(1e-3),
+    itermax_LSQR(nnodev*10), LSQR_ATOL(1e-3), 
     jumping(false),
     smooth_velocity(false), logscale_vel(false), my_apply_filter(false),
     wsv_min(0.0), wsv_max(0.0), dwsv(1.0), weight_s_v(0.0), corr_vel_p(0),
@@ -77,12 +77,12 @@ TomographicInversion3d::TomographicInversion3d(boost::mpi::communicator& com,
     }
 
     bathyp = new Interface3d(slowness_mesh());
-
+    
     my_nb_data = read_file(datafn);
     A.resize(nb_data());
-
+    
     const int max_np = int(3*pow(double(nnodev),1.0/3.0));
-
+    
     if (!xflat()) {
         my_rvx.reset(new sparse_matrix(nnodev));
     }
@@ -559,18 +559,34 @@ void TomographicInversion3d::DampAniE(double a)
     target_dae = a/100.0; // % -> fraction
 }
 
+
 void TomographicInversion3d::FixDamping(double v, double d, double ad, double ae)
 {
+
     damping_is_fixed = true;
-    damp_velocity = true;
-    damp_depth = true;
-    damp_anid = true;
-    damp_anie = true;
-    weight_d_v = v;
-    weight_d_d = d;
-    weight_d_ad = ad;
-    weight_d_ae = ae;
+
+    if(v>=0) {
+            damp_velocity = true;
+            weight_d_v = v;
+    }
+
+    if(d>=0) {
+            damp_depth = true;
+            weight_d_d = d;
+    }
+
+    if(ad>=0) {
+            damp_anid = true;
+            weight_d_ad = ad;
+    }
+
+    if(ae>=0) {
+            damp_anie = true;
+            weight_d_ae = ae;
+    }
+
 }
+
 
 void TomographicInversion3d::Squeezing(const char* fn)
 {
