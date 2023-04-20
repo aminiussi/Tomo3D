@@ -1477,7 +1477,7 @@ int TomographicInversion3d::_solve(bool sv, double wsv, bool sd, double wsd,
 				   bool dad, double wdad, bool dae, double wdae)
 {//ojo
     if (is_verbose(0)) {
-        std::cerr << "enter TomographicInversion3d::_solve\n";
+        std::cerr << "Enter TomographicInversion3d::_solve\n";
     }
 
     // construct total kernel

@@ -153,6 +153,8 @@ int main(int argc, char** argv)
             return 1;
         }
     }
+
+//	First, identify if data is 2D, to correctly read the rest of input-flags
     for (int i=1; i<argc; i++){
         if (argv[i][0] == '-'){
             switch(argv[i][1]){
@@ -160,6 +162,15 @@ int main(int argc, char** argv)
                 get2d3d = true;
                 str_add=".3d";
                 break;
+		}
+        }else {
+            break;
+        }
+   }
+
+    for (int i=1; i<argc; i++){
+        if (argv[i][0] == '-'){
+            switch(argv[i][1]){
 	    case 'M':
 		meshfn = &argv[i][2];
 		getMesh = true;

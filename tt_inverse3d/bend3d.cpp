@@ -55,7 +55,7 @@ int BendingSolver3d::refine(Array1d<Point3d>& path,
     direc = -dTdV; // p0
     // conjugate gradient search
 //    int iter_max = np*10;
-    int iter_max = np*20;//added
+    int iter_max = np*40;//added
     for (int iter=1; iter<=iter_max; iter++){
         new_time=line_min(path, direc);
 
@@ -122,7 +122,7 @@ int BendingSolver3d::refine(Array1d<Point3d>& path,
     
     // conjugate gradient search
 //    int iter_max = np*10;
-    int iter_max = np*20;//aqui
+    int iter_max = np*40;//aqui
     for (int iter=1; iter<=iter_max; iter++){
 
       //cerr<<iter<<"A, dentro refine: "<< old_time<<" "<<new_time<<"\n";
