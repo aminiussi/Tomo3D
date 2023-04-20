@@ -203,7 +203,7 @@ SparseRectangularData::SparseRectangularData(const Array1d<const sparse_matrix*>
     for (int iA=1; iA<=As.size(); iA++){
         sparse_matrix const& as = *(As(iA));
 	double factor=spec(iA).scale_factor;
-        cerr << "sparse_rect " << iA << " " << factor << '\n';
+        //cerr << "sparse_rect " << iA << " " << factor << '\n';
 	for (int i=1; i <= as.size(); i++){
 	    if (spec(iA).row(i)) {
 		first_k[ii++ - 1] = k;

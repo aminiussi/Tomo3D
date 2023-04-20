@@ -739,6 +739,7 @@ int main(int argc, char** argv)
 
 
 
+
     SlownessMesh3d smesh(meshfn);
 
     TomographicInversion3d inv(world,smesh,datafn,xorder,yorder,zorder,crit_len,
@@ -749,6 +750,7 @@ int main(int argc, char** argv)
     inv.set_output_prefix(output_prefix);
 
     inv.set_nb_threads(nb_threads);
+
 #pragma omp parallel
     omp_set_num_threads(nb_threads);
     if (crit_chi>0) inv.doRobust(crit_chi);
@@ -849,11 +851,11 @@ int main(int argc, char** argv)
 	inv.onlyForward(first_iter);
     }
 
-//    cerr << "... FIXING "<< fv << fd << fad << fae <<"\n";
+//    cerr << "CALL FIXING "<< fv << fd << fad << fae <<"\n";
 
     inv.fixing(fv,fd,fad,fae);
 
-//    cerr << "... SOLVE "<< "\n";
+//    cerr << "CALL SOLVE "<< "\n";
 
     inv.solve(niter);
 

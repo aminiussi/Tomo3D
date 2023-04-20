@@ -46,7 +46,7 @@ public:
           my_used_threads(0),
           my_used_threads_mutex()
 	{}
-    
+
     int  step()       const { return my_step; }
     int  nb_step()    const { return my_nb_step; }
     bool solving()    const { return my_step >= 1 && my_step <= my_nb_step; }
@@ -185,9 +185,9 @@ private:
 };
 
 struct TomographicInversion3d::path_solver {
-    path_solver(source_solver& s, int r) 
+    path_solver(source_solver& s, int r)
         : parent(s), receiver(r) {}
-    
+
     void operator()() {
         parent.global.inversion.process_receiver(parent, receiver);
     }
@@ -315,9 +315,16 @@ TomographicInversion3d::compute_full_reflection_model() {
 void
 TomographicInversion3d::compute_paths(solver& globals) {
     if (do_full_refl) {
+
+//	cerr<<"compute_full_reflection_model() \n";
+
         compute_full_reflection_model();
     }
+
     if (use_multithreading()) {
+
+//	cerr<<"use multithreading \n";
+
         globals.reset_max_used_threads();
         boost::thread_group workers;
         for (int n = 0; n < src.size() && globals.available_threads() > 0; ++n) {
@@ -328,9 +335,20 @@ TomographicInversion3d::compute_paths(solver& globals) {
             std::cerr << "MPI process " << com().rank() << " used " << globals.max_used_threads() 
                       << " sfw threads to compute paths\n";
         }
-    } else {
+    } else {//aqui
+
+//	cerr<<"source_processor proc(globals) \n";
+
         source_processor proc(globals);
+
+//	cerr<<"proc() \n";
+
         proc();
+
+//	cerr<<"AFTER proc() \n";
+
+//	cerr<<"************************** \n";
+
     }
     {
         std::vector<sparse_matrix>& matrix_bits = globals.matrix_bits();
@@ -524,6 +542,9 @@ TomographicInversion3d::solve(int niter)
     }
 
     {
+
+//	cerr << "solver_global \n";
+
         solver solver_global(*this,niter);
 
         while(solver_global.solving()) {
@@ -554,7 +575,12 @@ TomographicInversion3d::solve(int niter)
 		}
             }
             reset_kernel();
+
+    	    //cerr << "call compute_paths \n";
+
             compute_paths(solver_global);
+
+    	    //cerr << "****** After compute_paths \n";
 
             // construct data vector
             if (!only_forward || first_it) {
@@ -620,35 +646,35 @@ TomographicInversion3d::solve(int niter)
 
 		// construct total kernel matrix and data vector, and solve Ax=b
 		if (smooth_velocity && !fv) {
-//	                std::cerr << "CALC_AV_MATRIX: " << '\n';
+	                //std::cerr << "CALC_AV_MATRIX: " << '\n';
 			calc_averaging_matrix();
 		}
 		if (smooth_anid && !fad){
-//	                std::cerr << "CALC_ANID_AV_MATRIX: " << '\n';
+	                //std::cerr << "CALC_ANID_AV_MATRIX: " << '\n';
 			calc_anid_averaging_matrix();
 		}
 		if (smooth_anie && !fae){
-//	                std::cerr << "CALC_ANIE_AV_MATRIX: " << '\n';
+	                //std::cerr << "CALC_ANIE_AV_MATRIX: " << '\n';
 			calc_anie_averaging_matrix();
 		}
 		if (reflp && smooth_depth && !fd) {
-//	                std::cerr << "CALC_REFL_AV_MATRIX: " << '\n';
+	                //std::cerr << "CALC_REFL_AV_MATRIX: " << '\n';
 			calc_refl_averaging_matrix();
 		}
 		if (damp_velocity && !fv) {
-//	                std::cerr << "CALC_DAMPING_MATRIX: " << '\n';
+	                //std::cerr << "CALC_DAMPING_MATRIX: " << '\n';
 			calc_damping_matrix();
 		}
 		if (reflp && damp_depth && !fd) {
-//	                std::cerr << "CALC_REFL_DAMPING_MATRIX: " << '\n';
+	                //std::cerr << "CALC_REFL_DAMPING_MATRIX: " << '\n';
 			calc_refl_damping_matrix();
 		}
 		if (damp_anid && !fad){
-//	                std::cerr << "CALC_ANID_DAMPING_MATRIX: " << '\n';
+	               // std::cerr << "CALC_ANID_DAMPING_MATRIX: " << '\n';
 		    calc_anid_damping_matrix();
 		}
 		if (damp_anie && !fae){
-//	                std::cerr << "CALC_ANIE_DAMPING_MATRIX: " << '\n';
+	             //   std::cerr << "CALC_ANIE_DAMPING_MATRIX: " << '\n';
 		    calc_anie_damping_matrix();
 		}
 
@@ -912,6 +938,7 @@ TomographicInversion3d::trace_path_processing(char mark, int bend_iter, int src,
 	}
     }
     if (bend_iter < 0) {
+	cerr << "::inside trace_path_processing \n";
 	cerr << "TomographicInversion3d::iteration = " << step << '\n'
 	     << "TomographicInversion3d::too many iterations required\n"
 	     << "TomographicInversion3d::for bending refinement of ray between (s,r):"
@@ -929,33 +956,48 @@ TomographicInversion3d::process_receiver(source_solver& locl, int ircv) const {
     Array1d<Point3d> path;
     std::vector<int> start_i, end_i;
     Array1d<const Interface3d*> interp;
+
+// 	    cerr << "1 orig, new: "<<orig_t<<" "<<final_t<<"\n";
     
     switch (get_ray_type(isrc,ircv)) {
     case RAY_REFRACTION:
     case RAY_MULTIPLE_REFRACTION: 
     {
+
+ //	    cerr << "2 orig, new: "<<orig_t<<" "<<final_t<<"\n";
+
 	GraphSolver3d const& solver = *(locl.refraction_solver);
+
+ //	    cerr << "3 orig, new: "<<orig_t<<" "<<final_t<<"\n";
+
 	if (solver.slowness_mesh().inWater(r) && !solver.slowness_mesh().inWater(src(isrc))){
+ //	    cerr << "4 orig, new: "<<orig_t<<" "<<final_t<<"\n";
+
 	    int i0, i1;
 	    solver.pickPathRcvW(r,path,i0,i1);
 	    start_i.push_back(i0);
-	    end_i.push_back(i1); 
+	    end_i.push_back(i1);
 	    interp.push_back(bathyp);
-	    BendingSolver3d bend(solver.slowness_mesh(), betasp, cg_tolerance, br_tolerance);
-	    iterbend = bend.refine(path, orig_t, final_t,
-				   start_i, end_i, interp, ani);
+	    BendingSolver3d bend(solver.slowness_mesh(), betasp, cg_tolerance, br_tolerance);//problema?
+//	cerr << "::process_receiver 1 \n";
+// 	    cerr << "5 orig, new: "<<orig_t<<" "<<final_t<<"\n";
+
+	    iterbend = bend.refine(path, orig_t, final_t,start_i, end_i, interp, ani);//ojo problema?
 	    trace_path_processing('*', iterbend, isrc, ircv, locl.global.step());
 	} else if (!solver.slowness_mesh().inWater(r) && solver.slowness_mesh().inWater(src(isrc))){
+//	cerr << "::process_receiver 2 \n";
+
 	    int is0, is1;
 	    solver.pickPathSrcW(r,path,is0,is1);
 	    start_i.push_back(is0);
 	    end_i.push_back(is1); 
 	    interp.push_back(bathyp);
 	    BendingSolver3d bend(solver.slowness_mesh(), betasp, cg_tolerance, br_tolerance);
-	    iterbend = bend.refine(path, orig_t, final_t,
-				   start_i, end_i, interp, ani);
+	    iterbend = bend.refine(path, orig_t, final_t,start_i, end_i, interp, ani);
 	    trace_path_processing('^', iterbend, isrc, ircv, locl.global.step());
 	} else if (solver.slowness_mesh().inWater(r) && solver.slowness_mesh().inWater(src(isrc))){
+//	cerr << "::process_receiver 3 \n";
+
 	    int i0, i1, is0, is1;
 	    solver.pickPathSrcWRcvW(r,path,i0,i1,is0,is1);
 	    start_i.push_back(i0);
@@ -965,10 +1007,11 @@ TomographicInversion3d::process_receiver(source_solver& locl, int ircv) const {
 	    interp.push_back(bathyp);
 	    interp.push_back(bathyp);
 	    BendingSolver3d bend(solver.slowness_mesh(), betasp, cg_tolerance, br_tolerance);
-	    iterbend = bend.refine(path, orig_t, final_t,
-				   start_i, end_i, interp, ani);
+	    iterbend = bend.refine(path, orig_t, final_t,start_i, end_i, interp, ani);
 	    trace_path_processing('~', iterbend, isrc, ircv, locl.global.step());
 	} else {
+//	cerr << "::process_receiver 4 \n";
+
 	    solver.pickPath(r, path);
 	    BendingSolver3d bend(solver.slowness_mesh(), betasp, cg_tolerance, br_tolerance);
 	    iterbend = bend.refine(path, orig_t, final_t, ani);
@@ -984,6 +1027,8 @@ TomographicInversion3d::process_receiver(source_solver& locl, int ircv) const {
 	assert(reflp);
 	int ir0, ir1;
 	if (solver.slowness_mesh().inWater(r) && !solver.slowness_mesh().inWater(src(isrc))){
+//	cerr << "::process_receiver 5 \n";
+
 	    int i0, i1;
 	    solver.pickReflPathRcvW(r,path,i0,i1,ir0,ir1);
 	    start_i.push_back(i0);
@@ -997,6 +1042,8 @@ TomographicInversion3d::process_receiver(source_solver& locl, int ircv) const {
 				   start_i, end_i, interp, ani);
 	    trace_path_processing('#', iterbend, isrc, ircv, locl.global.step());
 	} else if (!solver.slowness_mesh().inWater(r) && solver.slowness_mesh().inWater(src(isrc))){
+//	cerr << "::process_receiver 6 \n";
+
 	    int is0, is1;
 	    solver.pickReflPathSrcW(r,path,is0,is1,ir0,ir1);
 	    start_i.push_back(ir0);
@@ -1010,6 +1057,8 @@ TomographicInversion3d::process_receiver(source_solver& locl, int ircv) const {
 				   start_i, end_i, interp, ani);
 	    trace_path_processing('/', iterbend, isrc, ircv, locl.global.step());
 	} else if (solver.slowness_mesh().inWater(r) && solver.slowness_mesh().inWater(src(isrc))){
+//	cerr << "::process_receiver 7 \n";
+
 	    int i0, i1, is0, is1;
 	    solver.pickReflPathSrcWRcvW(r,path,i0,i1,is0,is1,ir0,ir1);
 	    start_i.push_back(i0);
@@ -1026,6 +1075,8 @@ TomographicInversion3d::process_receiver(source_solver& locl, int ircv) const {
 				   start_i, end_i, interp, ani);
 	    trace_path_processing('|', iterbend, isrc, ircv, locl.global.step());
 	} else {
+//	cerr << "::process_receiver 8 \n";
+
 	    solver.pickReflPath(r,path,ir0,ir1);
 	    start_i.push_back(ir0);
 	    end_i.push_back(ir1);

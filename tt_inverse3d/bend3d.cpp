@@ -54,10 +54,11 @@ int BendingSolver3d::refine(Array1d<Point3d>& path,
     calc_dTdV(smesh, path, bs, dTdV, pp, Q, dQdu, ani);
     direc = -dTdV; // p0
     // conjugate gradient search
-    int iter_max = np*10;
+//    int iter_max = np*10;
+    int iter_max = np*20;//added
     for (int iter=1; iter<=iter_max; iter++){
         new_time=line_min(path, direc);
-        
+
         if ((old_time-new_time)<=cg_tol){
             return iter;
         } else {
@@ -92,7 +93,18 @@ int BendingSolver3d::refine(Array1d<Point3d>& path,
 			    const std::vector<int>& end_i,
 			    const Array1d<const Interface3d*>& interf, bool ani)
 {
+//aqui
+//   cerr << "entra refine ****** \n";
+
+//   cerr << "1 orig, new: "<<orig_time<<" "<<new_time<<"\n";
+
     int np=check_path_size(path,start_i,end_i,interf);
+
+//   cerr << "np: "<<np<<"\n";
+//   cerr << "2 orig, new: "<<orig_time<<" "<<new_time<<"\n";
+////   cerr << "start: "<< start_i <<"\n";
+////   cerr << "end: "<< end_i <<"\n";
+
     makeBSpoints(path,pp);
     new_point.resize(np); 
     makeBSpoints(new_point,new_pp);
@@ -109,9 +121,16 @@ int BendingSolver3d::refine(Array1d<Point3d>& path,
     direc = -dTdV; // p0
     
     // conjugate gradient search
-    int iter_max = np*10;
+//    int iter_max = np*10;
+    int iter_max = np*20;//aqui
     for (int iter=1; iter<=iter_max; iter++){
+
+      //cerr<<iter<<"A, dentro refine: "<< old_time<<" "<<new_time<<"\n";
+
         new_time=line_min(path, direc, start_i, end_i, interf);
+
+      //cerr<<iter<<"B, dentro refine: "<< old_time<<" "<<new_time<<". "<<old_time-new_time<<" "<<cg_tol<<"\n";
+
         if ((old_time-new_time)<=cg_tol){
             return iter;
         }
@@ -147,7 +166,9 @@ int BendingSolver3d::refine(Array1d<Point3d>& path,
         dTdV = new_dTdV;
         old_time = new_time;
     }
+
     return -iter_max; // too many iterations
+
 }
 
 void BendingSolver3d::adjust_dTdV(Array1d<Point3d>& dTdV,

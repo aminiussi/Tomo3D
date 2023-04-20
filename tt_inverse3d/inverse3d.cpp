@@ -1955,7 +1955,7 @@ double TomographicInversion3d::auto_damping_depth(double wdv, double wdad, doubl
                    damp_velocity,wdv,true,wd1,damp_anid,wdad,damp_anie,wdae); n++;
     fl = calc_ave_dmd()-target_dd;
 
-  //  cerr << "f1: " << fl << "\n";
+//    cerr << "f1: " << fl << "\n";
 
     if (is_verbose(0)){
         cerr << "\t\tave_dmd = " << (fl+target_dd)*100 << "% at wd1("

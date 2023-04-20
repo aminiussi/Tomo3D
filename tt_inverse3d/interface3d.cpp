@@ -143,21 +143,44 @@ int Interface3d::nodeIndex(int i, int j) const { return ser_index_r(i,j); } // A
 
 void Interface3d::calc_slope() //modified
 {
+
+//    cerr << "ENTRA CALC_SOLVE \n";//aqui
+
     nxr=xpos.size();
     nyr=ypos.size();
 
-    slope_x.resize(nxr-1,nyr);
-    slope_y.resize(nxr,nyr-1);
-    for (int j=1; j<=nyr; j++){
-	for (int i=1; i<nxr; i++) {
-            slope_x(i,j) = (zpos(i+1,j)-zpos(i,j))/(xpos[i+2]-xpos[i-1]);//aqui no entra cuando nxr==1
-        }
+    if(nxr>1)	{
+
+	    slope_x.resize(nxr-1,nyr);
+	    for (int j=1; j<=nyr; j++){
+		for (int i=1; i<nxr; i++) {
+	            slope_x(i,j) = (zpos(i+1,j)-zpos(i,j))/(xpos[i+2]-xpos[i-1]);//aqui no entra cuando nxr==1
+	        }
+	    }
+
+	    slope_y.resize(nxr,nyr-1);
+	    for (int i=1; i<=nxr; i++){
+		for (int j=1; j<nyr; j++) {
+	            slope_y(i,j) = (zpos(i,j+1)-zpos(i,j))/(ypos[j+2]-ypos[j-1]);
+	        }
+	    }
+
     }
-    for (int i=1; i<=nxr; i++){
-	for (int j=1; j<nyr; j++) {
-            slope_y(i,j) = (zpos(i,j+1)-zpos(i,j))/(ypos[j+2]-ypos[j-1]);
-        }
+    if(nxr==1)	{
+
+	    slope_x.resize(1,nyr);
+	    for (int j=1; j<=nyr; j++){
+	            slope_x(1,j) = 1;
+	    }
+
+	    slope_y.resize(1,nyr-1);
+	    for (int j=1; j<nyr; j++) {
+	    	slope_y(1,j) = (zpos(1,j+1)-zpos(1,j))/(ypos[j+2]-ypos[j-1]);
+            }
+
     }
+
+
 }
 
 double Interface3d::xmin() const { return xpos.front(); }
@@ -358,6 +381,9 @@ namespace details {
     position(double x, std::vector<double> const& pos, double epsilon) {
         int const nx = pos.size();
         assert(nx);
+
+//cerr << "ENTRA DETAILS() \n";
+
         if (nx == 1) {
             return 1;
         }
