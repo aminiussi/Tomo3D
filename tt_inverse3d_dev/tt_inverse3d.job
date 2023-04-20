@@ -1,0 +1,143 @@
+#! /bin/bash
+
+MODEL=recover/models
+TIMES=recover/times
+INTRFC=recover/reflectors
+PHASE=both
+FOLDER=both0to_2
+WORK_PATH=recover/$PHASE/$FOLDER
+mkdir $WORK_PATH
+cp tt_inverse3d.job $WORK_PATH/tt_inverse3dr.$FOLDER.job
+
+# Input files
+
+SMESH=$MODEL/velmodinv0.dat		# Input velocity grid
+REFL=$INTRFC/rec2refl.out		# Reflector geometry file (Moho)
+DATA=$TIMES/tt3dbothto.dat		# Input travel time data file (observed picks)
+#DAMP=$WORK_PATH/			# Damping file
+
+# Output files
+
+LOG_FILE=$WORK_PATH/$FOLDER.log		# Log file
+OUT_FILE=$WORK_PATH/$FOLDER.out		# Output file
+PREFIX=$WORK_PATH/$FOLDER		# Prefix for all output files
+MASK=$WORK_PATH/dws.dat			# DWS output file
+
+# Ray-trace parameters
+
+XORDER=3	# Degree of forward star in X direction
+YORDER=3	# Degree of forward star in Y direction
+ZORDER=3	# Degree of forward star in Z direction
+CLEN=0.8	# Critical length (km) for beta spline. Must be > velocity node spacing.
+NINTP=8 	# Number of interpolations in beta spline
+TOT1=1e-4	# Tolerance in bending refinement (set to 1/10 of desired tt resolution)
+TOT2=1e-6	# Line minimization
+
+# Inversion parameters
+
+CRIT_CHI=15	# Eliminate data outliers with chi values greater than this number.
+LSQR_TOL=1e-4	# Tolerance level to terminate inversion.
+D_WEIGHT=1	# Relative weighting of Pg and PmP (1=equal, 0=only uses Pg, 10=PmP more important than Pg)
+MAX_DV=10	# Damping in velocity (%)
+MAX_DD=10	# Damping in depth (%)
+
+TYPE=1		# Type of inversion.	1 = Many iterations with a single set of parameters
+		#			2 = Single iteration with many sets of parameters
+
+NITER=15	# TYPE = 1 : Number of iterations
+WSV=100		# TYPE = 1 : Velocity smoothing parameter
+WSD=100		# TYPE = 1 : Depth smoothing parameter
+
+WSV_MIN=0	# TYPE = 2 : Minimum velocity smoothing parameter
+WSV_MAX=3	# TYPE = 2 : Maximum velocity smoothing parameter
+WSD_MIN=0	# TYPE = 2 : Minimum depth smoothing parameter
+WSD_MAX=3	# TYPE = 2 : Maximum depth smoothing parameter
+DW=1		# TYPE = 2 : Increment of smoothing parameter
+POWER10=y	# TYPE = 2 : If "y", the smoothing increment will be by powers of ten (if not, linear)
+
+# Correlation length files:
+
+CORR_V=corr_v.$FOLDER
+CORR_D=corr_d.$FOLDER
+
+# Correlation length parameters
+
+XMIN=0.			# Left end of the model (km)
+XMAX=5			# Right end of the model (km)
+YMIN=0.			# Front end of the model (km)
+YMAX=5.			# Back end of the model (km)
+ZMIN=0.			# Top of the model (km)
+ZMAX=3.			# Bottom of the model (km)
+LX_TOP=3.		# X-direction correlation length at the TOP
+LX_BOT=5.		# X-direction correlation length at the BOTTOM
+LY_TOP=3.		# Y-direction correlation length at the TOP
+LY_BOT=5.		# Y-direction correlation length at the BOTTOM
+LV_TOP=3.		# Vertical correlation length at the TOP
+LV_BOT=5.		# Vertical correlation length at the BOTTOM
+LXR=5.			# X-direction correlation length for the reflector (=LX_BOT ??)
+LYR=5.			# Y-direction correlation length for the reflector (=LY_BOT ??)
+
+# Other options
+
+FLAGS=" -s -o2 -V " 
+
+#--------- NO - MORE - CHANGES - BELOW - THIS - LINE ------------------------
+
+cat > $CORR_V <<END
+2    2    2
+$XMIN $XMAX
+$YMIN $YMAX
+0    0
+0    0
+$ZMIN $ZMAX
+$LX_TOP $LX_BOT
+$LX_TOP $LX_BOT
+$LX_TOP $LX_BOT
+$LX_TOP $LX_BOT
+$LY_TOP $LY_BOT
+$LY_TOP $LY_BOT
+$LY_TOP $LY_BOT
+$LY_TOP $LY_BOT
+$LV_TOP $LV_BOT
+$LV_TOP $LV_BOT
+$LV_TOP $LV_BOT
+$LV_TOP $LV_BOT
+END
+cat > $CORR_D <<END
+2    2
+$XMIN $YMIN $LXR $LYR
+$XMIN $YMAX $LXR $LYR
+$XMAX $YMIN $LXR $LYR
+$XMAX $YMAX $LXR $LYR
+END
+
+#
+
+N=$XORDER/$YORDER/$ZORDER/$CLEN/$NINTP/$TOT1/$TOT2
+
+if [ "$TYPE" = "1" ] ; then
+  ARG=" -I$NITER -SV$WSV -SD$WSD "
+elif [ "$TYPE" = "2" ] ; then
+  X=""
+  if [ "$POWER10" = "y" ] ; then
+    X=" -XV -XD "
+  fi
+  ARG=" -SV$WSV_MIN/$WSV_MAX/$DW -SD$WSD_MIN/$WSD_MAX/$DW $X "
+fi
+
+#	./tt_inverse3d -M$SMESH -G$DATA -N$N -F$REFL -A -L$LOG_FILE -O$PREFIX -K$MASK \
+#	-R$CRIT_CHI -Q$LSQR_TOL -W$D_WEIGHT \
+#	-TV$MAX_DV -TD$MAX_DD -CV$CORR_V -CD$CORR_D $ARG $FLAGS > $OUT_FILE 2>&1
+
+	./tt_inverse3d -M$SMESH -G$DATA -N$N -F$REFL -L$LOG_FILE -O$PREFIX -K$MASK \
+	-R$CRIT_CHI -Q$LSQR_TOL -W$D_WEIGHT \
+	-TV$MAX_DV -TD$MAX_DD -CV$CORR_V -CD$CORR_D $ARG $FLAGS > $OUT_FILE 2>&1
+
+#	./tt_inverse3d -M$SMESH -G$DATA -N$N -L$LOG_FILE -O$PREFIX -K$MASK \
+#	-R$CRIT_CHI -Q$LSQR_TOL -W$D_WEIGHT \
+#	-TV$MAX_DV -TD$MAX_DD -CV$CORR_V -CD$CORR_D $ARG $FLAGS > $OUT_FILE 2>&1
+
+
+rm $CORR_V $CORR_D
+
+#cd $WORK_PATH

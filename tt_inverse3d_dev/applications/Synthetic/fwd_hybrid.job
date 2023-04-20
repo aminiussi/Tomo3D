@@ -1,0 +1,251 @@
+#!/usr/bin/env bash
+##SBATCH -p qdr
+##SBATCH -N 5
+##SBACTH -t 05:00:00
+
+module purge
+module load userspace/170135 
+module load intel/compiler/64/2017.4.196
+module load intel/mpi/64/2017.4.196
+module load boost-intel17/1_65_1
+module load cmake/3.9.4
+module load python/2.7.14_anaconda2
+module load intel/mkl/64/2017.4.196
+
+#. /softs/env-intel15.0.2-impi5.0.3.sh
+
+nb_cpu=$(grep "physical id" /proc/cpuinfo | sort -u | wc -l)
+nb_core_per_cpu=$(grep "cpu cores" /proc/cpuinfo | sort -u | awk '{print $4;}')
+nb_sibling_per_cpu=$(grep "siblings" /proc/cpuinfo | sort -u | awk '{print $3;}')
+
+echo "Node configuration: $nb_cpu cpu with $nb_core_per_cpu cores each"
+
+if [ $nb_sibling_per_cpu -gt $nb_core_per_cpu ]
+then
+    echo "Hyper-Threading enabled, probably a mistake"
+fi
+
+#default MT setting:
+nb_threads=$nb_core_per_cpu
+phost=$nb_cpu
+
+tag=""
+inverse3d=""
+
+while getopts "t:i:p:h:" opt
+do
+    case $opt in
+        t)
+	    tag=$OPTARG
+	    ;;
+	i)
+	    inverse3d=$OPTARG
+	    ;;
+	h)
+	    nb_threads=$OPTARG
+	    ;;
+	p)
+	    phost=$OPTARG
+	    ;;
+	\?)
+	    echo "invalid option -$OPTARG" >&2
+    esac
+done
+
+if [ -z "$tag" ]
+then
+    tag="."
+fi
+
+if [ -z "$inverse3d" ]
+then
+    inverse3d=../../$tag/build/tt_inverse3d
+fi
+
+ldd $inverse3d
+
+set -x
+
+if [ -x $inverse3d ]
+then
+    echo will test $inverse3d
+else
+    echo  could not execute program \'$inverse3d\'
+    exit 1
+fi
+
+#nb_nodes=$(cat $OAR_NODE_FILE | sort -u | wc -l)
+nb_nodes=$SLURM_JOB_NUM_NODES
+nb_sibling=$(grep sibling /proc/cpuinfo  | sort -u | awk '{print $3;}')
+if [ -z "$nb_threads" ]
+then
+    nb_threads=$nb_sibling
+fi
+
+#TESTDIR=$(dirname $0)
+TESTDIR=$SLURM_SUBMIT_DIR
+#TESTNAME=$(basename $0 .oar)
+TESTNAME=$(echo $SLURM_JOB_NAME | cut -d'.' -f1)
+INPUT=$TESTDIR/input
+
+FOLDER=$TESTNAME
+#WORK_PATH=$TESTDIR/output/$tag/$FOLDER.$nb_nodes.$nb_threads
+WORK_PATH=$TESTDIR/output/$SLURM_JOB_ID.$FOLDER.$nb_nodes.$nb_threads
+rm -rf $WORK_PATH
+mkdir -p $WORK_PATH
+cp $SLURM_JOB_NAME $WORK_PATH/$SLURM_JOB_ID.$FOLDER.job
+
+node_list=$WORK_PATH/nlist_$SLURM_JOB_ID
+srun hostname -s | sort -u > $node_list
+
+# Input files
+
+SMESH=$INPUT/vel/vp_interp_soft_XY500m_Z150m_km_extd.in		# Input velocity grid
+#REFL=$INPUT/refl/			# Reflector geometry file (Moho)
+DATA=$INPUT/picks/acq_bm-rp.in		# Input travel time data file (observed picks)
+#DAMP=$INPUT/				# Damping file
+ANID=$INPUT/ani/
+ANIE=$INPUT/ani/
+TILT=0.
+
+# Output files
+
+LOG_FILE=$WORK_PATH/$FOLDER.log		# Log file
+OUT_FILE=$WORK_PATH/$FOLDER.out		# Output file
+PREFIX=$WORK_PATH/$FOLDER		# Prefix for all output files
+MASK=$WORK_PATH/dws.dat			# DWS output file
+SYN=$WORK_PATH/vp_interp_soft_XY500m_Z150m_km_extd.dat
+
+# Ray-trace parameters
+
+XORDER=4	# Degree of forward star in X direction
+YORDER=4	# Degree of forward star in Y direction
+ZORDER=4	# Degree of forward star in Z direction
+CLEN=1		# Critical length (km) for beta spline. Must be > velocity node spacing.
+NINTP=8 	# Number of interpolations in beta spline
+TOT1=1e-4	# Tolerance in bending refinement (set to 1/10 of desired tt resolution)
+TOT2=1e-6	# Line minimization
+
+# Inversion parameters
+
+CRIT_CHI=10	# Eliminate data outliers with chi values greater than this number.
+LSQR_TOL=1e-4	# Tolerance level to terminate inversion.
+D_WEIGHT=1	# Relative weighting of Pg and PmP (1=equal, 0=only uses Pg, 10=PmP more important than Pg)
+MAX_DV=5	# Damping in velocity (%)
+MAX_DD=5	# Damping in depth (%)
+MAX_DAD=5	# Damping in delta (%)
+MAX_DAE=5	# Damping in epsilon (%)
+
+TYPE=1		# Type of inversion.	1 = Many iterations with a single set of parameters
+		#			2 = Single iteration with many sets of parameters
+
+NITER=15	# TYPE = 1 : Number of iterations
+WSV=10		# TYPE = 1 : Velocity smoothing parameter
+WSD=10		# TYPE = 1 : Depth smoothing parameter
+WSAD=1		# TYPE = 1 : Delta smoothing parameter
+WSAE=2		# TYPE = 1 : Epsilon smoothing parameter
+
+
+WSV_MIN=0	# TYPE = 2 : Minimum velocity smoothing parameter
+WSV_MAX=3	# TYPE = 2 : Maximum velocity smoothing parameter
+WSD_MIN=0	# TYPE = 2 : Minimum depth smoothing parameter
+WSD_MAX=3	# TYPE = 2 : Maximum depth smoothing parameter
+DW=1		# TYPE = 2 : Increment of smoothing parameter
+POWER10=y	# TYPE = 2 : If "y", the smoothing increment will be by powers of ten (if not, linear)
+
+# Correlation length files:
+
+CORR_V=$WORK_PATH/corr_v.$SLURM_JOB_ID
+CORR_D=$WORK_PATH/corr_d.$SLURM_JOB_ID
+
+# Correlation length parameters
+
+XMIN=0.			# Left end of the model (km)
+XMAX=30.			# Right end of the model (km)
+YMIN=0.			# Front end of the model (km)
+YMAX=30.			# Back end of the model (km)
+ZMIN=0.			# Top of the model (km)
+ZMAX=7.			# Bottom of the model (km)
+LX_TOP=0.25		# X-direction correlation length at the TOP
+LX_BOT=0.25		# X-direction correlation length at the BOTTOM
+LY_TOP=0.25		# Y-direction correlation length at the TOP
+LY_BOT=0.25		# Y-direction correlation length at the BOTTOM
+LV_TOP=0.25		# Vertical correlation length at the TOP
+LV_BOT=0.25		# Vertical correlation length at the BOTTOM
+LXR=0.5			# X-direction correlation length for the reflector (=LX_BOT ??)
+LYR=0.5			# Y-direction correlation length for the reflector (=LY_BOT ??)
+
+ELX_TOP=0.25		# X-direction correlation length at the TOP
+ELX_BOT=0.25		# X-direction correlation length at the BOTTOM
+ELY_TOP=0.25		# Y-direction correlation length at the TOP
+ELY_BOT=0.25		# Y-direction correlation length at the BOTTOM
+ELV_TOP=0.25		# Vertical correlation length at the TOP
+ELV_BOT=0.25		# Vertical correlation length at the BOTTOM
+
+DLX_TOP=0.5		# X-direction correlation length at the TOP
+DLX_BOT=0.5		# X-direction correlation length at the BOTTOM
+DLY_TOP=0.5		# Y-direction correlation length at the TOP
+DLY_BOT=0.5		# Y-direction correlation length at the BOTTOM
+DLV_TOP=0.5		# Vertical correlation length at the TOP
+DLV_BOT=0.5		# Vertical correlation length at the BOTTOM
+
+# Other options
+
+FLAGS=" -s -o2 -V " 
+
+#--------- NO - MORE - CHANGES - BELOW - THIS - LINE ------------------------
+
+cat > $CORR_V <<END
+2    2    2
+$XMIN $XMAX
+$YMIN $YMAX
+0    0
+0    0
+$ZMIN $ZMAX
+$LX_TOP $LX_BOT
+$LX_TOP $LX_BOT
+$LX_TOP $LX_BOT
+$LX_TOP $LX_BOT
+$LY_TOP $LY_BOT
+$LY_TOP $LY_BOT
+$LY_TOP $LY_BOT
+$LY_TOP $LY_BOT
+$LV_TOP $LV_BOT
+$LV_TOP $LV_BOT
+$LV_TOP $LV_BOT
+$LV_TOP $LV_BOT
+END
+cat > $CORR_D <<END
+2    2
+$XMIN $YMIN $LXR $LYR
+$XMIN $YMAX $LXR $LYR
+$XMAX $YMIN $LXR $LYR
+$XMAX $YMAX $LXR $LYR
+END
+#
+
+N=$XORDER/$YORDER/$ZORDER/$CLEN/$NINTP/$TOT1/$TOT2
+
+if [ "$TYPE" = "1" ] ; then
+  ARG=" -I$NITER -SV$WSV -SD$WSD "
+elif [ "$TYPE" = "2" ] ; then
+  X=""
+  if [ "$POWER10" = "y" ] ; then
+    X=" -XV -XD "
+  fi
+  ARG=" -SV$WSV_MIN/$WSV_MAX/$DW -SD$WSD_MIN/$WSD_MAX/$DW $X "
+fi
+
+mkdir -v ./solver_dump$SLURM_JOB_ID
+
+ulimit -c unlimited
+echo -n "Launching MPI job at "
+date
+
+#mpiexec.hydra -ppn $phost -bootstrap ssh -bootstrap-exec /usr/bin/slurmctld -hostfile $SLURM_JOB_NODELIST $inverse3d -M$SMESH -G$DATA -f$SYN -N$N -d$ANID -e$ANIE -t$TILT -L$LOG_FILE -O$PREFIX -K -R$CRIT_CHI -Q$LSQR_TOL -W$D_WEIGHT -TV$MAX_DV -TD$MAX_DD -Td$MAX_DAD -Te$MAX_DAE -CV$CORR_V -CD$CORR_D -Cd$CORR_AD -Ce$CORR_AE $ARG $FLAGS --nb-threads $nb_threads --placement --solver-stats --solver-trace-time=60 --solver-trace-dir="./solver_dump$SLURM_JOB_ID"
+mpiexec.hydra -ppn $phost -hostfile $node_list $inverse3d -M$SMESH -G$DATA -f$SYN -N$N -L$LOG_FILE -O$PREFIX -K -R$CRIT_CHI -Q$LSQR_TOL -W$D_WEIGHT -TV$MAX_DV -TD$MAX_DD -CV$CORR_V -CD$CORR_D $ARG $FLAGS --nb-threads $nb_threads --placement --solver-stats --solver-trace-time=60 --solver-trace-dir="./solver_dump$SLURM_JOB_ID"
+echo -n "Finished MPI job at "
+date
+
+rm -f $CORR_V $CORR_D $CORR_AD $CORR_AE
+#rm $CORR_V $CORR_D

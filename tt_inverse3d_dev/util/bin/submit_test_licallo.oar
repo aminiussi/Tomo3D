@@ -1,0 +1,9 @@
+#!/bin/bash
+#                                                                                                                    
+#OAR -l /nodes=1,walltime=0:5:0
+
+cat $OAR_NODE_FILE | sort -u
+
+. /softs/env_default.sh
+
+ctest -I $OAR_ARRAY_INDEX,$OAR_ARRAY_INDEX
