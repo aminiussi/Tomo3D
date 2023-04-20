@@ -1,4 +1,16 @@
-# TOMO3D_dev
+# TOMO3D_dev (English)
+
+The compressed file contains the different tomo3d subroutines and different folders. This version is updated with the possibility to run 2D data + script originally prepared for tomo2D.
+
+To compile this version, inside the build/ folder:
+
+1. Modify the install_new.sh file. There are two paths that you have to modify, depending on where you put this code and depending on where you have the "boost" library, necessary for tomo3d to work.
+2. Run this file in terminal (bash install_new.sh).
+3. Compile in terminal with make.
+4. The new tt_inverse3d executable will appear in this build/ folder. Just remember to change in your .bashrc, the path to this executable.
+5. To run 2D data, add the -2 flag to the execution line in the script. It is not necessary to change anything else in the script originally prepared for tomo2D, nor to modify the 2D input data (just change the executable to tt_inverse3d and add the "-2" flag). The outputs will also be in 2D format.
+
+# TOMO3D_dev (Spanish)
 
 El archivo comprimido contiene las diferentes subrutinas que conforman el tomo3d y distintas carpetas. Esta versión está actualizada con la posibilidad de poder correr datos 2D directamente con los datos de input y scripts originalmente preparados para tomo2D.
 
