@@ -79,8 +79,8 @@ AnisotropyMesh3d::AnisotropyMesh3d(std::string const& fname) // Modified
     ser_index.resize(nx(),ny(),nz());
     node_index.resize(nb_nodes());
     //even whit flat geometry, we need one inderection fake cell
-    cell_index.resize(std::max(nx()-1,1)*std::max(ny()-1,1)*(nz()-1));
-    index2cell.resize(std::max(nx()-1,1),std::max(ny()-1,1),nz()-1);
+    cell_index.resize(std::max(nx()-1,1)*std::max(ny()-1,1)*(nz()-1));//que pasa cuando nx==1?
+    index2cell.resize(std::max(nx()-1,1),std::max(ny()-1,1),nz()-1);//same ""
 
     int N=1;
     agrid = 0.0;
@@ -107,6 +107,7 @@ AnisotropyMesh3d::AnisotropyMesh3d(std::string const& fname) // Modified
     }
 
     // sanity check
+if(nx()>2)	{
     for (int i=2; i<=nx(); i++){
         if (xpos(i)<=xpos(i-1)){
             cerr << "AnisotropyMesh3d: illegal ordering of x nodes at xpos(" << i << ")="  << xpos(i)
@@ -114,6 +115,9 @@ AnisotropyMesh3d::AnisotropyMesh3d(std::string const& fname) // Modified
             exit(1);
         }
     }
+}
+if(ny()>2)	{
+
     for (int j=2; j<=ny(); j++){
         if (ypos(j)<=ypos(j-1)){
             cerr << "AnisotropyMesh3d: illegal ordering of y nodes at ypos(" << j << ")="  << ypos(j)
@@ -121,6 +125,9 @@ AnisotropyMesh3d::AnisotropyMesh3d(std::string const& fname) // Modified
             exit(1);
         }
     }
+}
+if(nz()>2)	{
+
     for (int i=2; i<=nz(); i++){
         if (zpos(i)<=zpos(i-1)){
             cerr << "AnisotropyMesh3d: illegal ordering of z nodes zpos(" << i << ")="  << zpos(i)
@@ -128,7 +135,8 @@ AnisotropyMesh3d::AnisotropyMesh3d(std::string const& fname) // Modified
             exit(1);
         }
     }
-    
+}
+
     commonNormKernel();
 }
 
@@ -318,7 +326,7 @@ double AnisotropyMesh3d::at(const Point3d& pos, Index3d& guess, Point3d& da) con
 }
 
 void
-AnisotropyMesh3d::cellNodes(int icell, std::vector<int>& n) const
+AnisotropyMesh3d::cellNodes(int icell, std::vector<int>& n) const	//corregir para nx==1
 {
     n[0] = cell_index[icell-1];
     Index3d index=node_index(n[0]);
@@ -342,7 +350,7 @@ AnisotropyMesh3d::cellNodes(int icell, std::vector<int>& n) const
     }
 }
 
-void AnisotropyMesh3d::cellNormKernel(int icell, Array2d<double>& T) const // Modified
+void AnisotropyMesh3d::cellNormKernel(int icell, Array2d<double>& T) const // Modified //corregir para 2d
 {
     Index3d index=node_index(cell_index[icell-1]);
     double x = xflat() ? 1 : dx(index.i());
@@ -385,6 +393,7 @@ void AnisotropyMesh3d::commonNormKernel() // Modified
     }
 }
 
+//corregir para nx==1
 int AnisotropyMesh3d::locate_in_cell(const Point3d& p, Index3d& guess,
                                  opt_idx& jLFU, opt_idx& jRFU, opt_idx& jLBU,
                                  opt_idx& jLFL, opt_idx& jLBL, opt_idx& jRFL,

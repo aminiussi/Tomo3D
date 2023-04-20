@@ -33,12 +33,12 @@ Interface3d::Interface3d(std::string const& fn) //modified
 {
     ifstream in(fn.c_str());
 
-//    cerr<< "OJO!!Interface3d:: opens "<<fn<<"\n";//it opens reflector file
-
     if(!in){
 	cerr<< "Interface3d::cannot open "<<fn<<"\n";
 	exit(1);
     }
+
+//    cerr<< "Interface3d:: opens "<<fn<<"\n";//it opens reflector file
 
     // First option: Input interface file as an xyz file
     // Row 1: number of x and y nodes
@@ -48,20 +48,40 @@ Interface3d::Interface3d(std::string const& fn) //modified
     ypos.resize(nyr);
     zpos.resize(nxr,nyr);
     nnodes=nxr*nyr;
-    ncells=(nxr-1)*(nyr-1);
+
+    if(nxr>1 && nyr>1){
+	 ncells=(nxr-1)*(nyr-1);
+         index2cell_r.resize(nxr-1,nyr-1);
+
+   } else if(nxr==1 && nyr>1) {
+	ncells=(nyr-1);
+        index2cell_r.resize(1,nyr-1);
+   }
+    else if(nxr>1 && nyr==1) {
+	ncells=(nxr-1);
+        index2cell_r.resize(nxr-1,1);
+   } else if (nxr==1 && nyr==1) {
+	ncells=1;
+        index2cell_r.resize(1,1);
+   }
+
+
     ser_index_r.resize(nxr,nyr);
     node_index_r.resize(nnodes);
     cell_index_r.resize(ncells);
-    index2cell_r.resize(nxr-1,nyr-1);
+
     int N=1;
     for(int i=1; i<=nxr; i++){
 	for(int j=1; j<=nyr; j++){
 	    in >> xpos[i-1] >> ypos[j-1] >> zpos(i,j);
 	    ser_index_r(i,j)=N;
 	    node_index_r(N).set(i,j);
+            //cerr << "ser_index_r: " << i << " " << j << " " << ser_index_r(i,j) << "\n";
 	    N++;
 	}
     }
+
+if(nxr>1 && nyr>1)	{
     int icell=1;
     for (int i=1; i<nxr; i++){
 	for(int j=1; j<nyr; j++){
@@ -69,6 +89,27 @@ Interface3d::Interface3d(std::string const& fn) //modified
 	    cell_index_r[icell++-1] = ser_index_r(i,j);
 	}
     }
+}
+if(nxr==1 && nyr>1)	{
+    int icell=1;
+	for(int j=1; j<nyr; j++){
+	    index2cell_r(1,j) = icell;
+	    cell_index_r[icell++-1] = ser_index_r(1,j);
+	}
+}
+if(nxr>1 && nyr==1)	{
+    int icell=1;
+	for(int i=1; i<nxr; i++){
+	    index2cell_r(i,1) = icell;
+	    cell_index_r[icell++-1] = ser_index_r(i,1);
+	}
+}
+if(nxr==1 && nyr==1)	{
+    int icell=1;
+    index2cell_r(1,1) = icell;
+    cell_index_r[1] = ser_index_r(1,1);
+}
+
 
 //    for (int j=0; j<=nyr; j++){ cout << "Y nodes at" << fn << ": " << j << ", " << ypos[j] << ", " << nyr << ".\n"; }//ojo
 
@@ -103,13 +144,13 @@ int Interface3d::nodeIndex(int i, int j) const { return ser_index_r(i,j); } // A
 void Interface3d::calc_slope() //modified
 {
     nxr=xpos.size();
-    nyr=ypos.size();  
+    nyr=ypos.size();
 
     slope_x.resize(nxr-1,nyr);
     slope_y.resize(nxr,nyr-1);
     for (int j=1; j<=nyr; j++){
 	for (int i=1; i<nxr; i++) {
-            slope_x(i,j) = (zpos(i+1,j)-zpos(i,j))/(xpos[i+2]-xpos[i-1]);
+            slope_x(i,j) = (zpos(i+1,j)-zpos(i,j))/(xpos[i+2]-xpos[i-1]);//aqui no entra cuando nxr==1
         }
     }
     for (int i=1; i<=nxr; i++){
@@ -348,13 +389,13 @@ void Interface3d::locate_in_plane(double x, double y,
     if ( i && j) {
         i0j0 = ser_index_r(*i,*j);
         if (!xflat()) {
-            i1j0 = ser_index_r(*i+1,*j);
+            i1j0 = ser_index_r(*i+1,*j);//ojo
         }
         if (!yflat()) {
             i0j1 = ser_index_r(*i,*j+1);
         }
         if (!(xflat() || yflat())) {
-            i1j1 = ser_index_r(*i+1,*j+1);
+            i1j1 = ser_index_r(*i+1,*j+1);//ojo
         }
     }
 }
@@ -377,21 +418,51 @@ double Interface3d::y(int i) const
 
 void Interface3d::cellNodes(int icell, int& j1, int& j2, int& j3, int& j4) const // Added
 {
+
     j1 = cell_index_r[icell-1];
     Index2d index=node_index_r(j1);
     int i=index.i(), j=index.j();
-    j2 = ser_index_r(i+1,j);
-    j3 = ser_index_r(i,j+1);
-    j4 = ser_index_r(i+1,j+1);
+
+    int ii=1;
+    int jj=1;
+    if(nxr==1 && nyr>1) {
+	jj=j+1;
+    }else if(nxr>1 && nyr==1) {
+	ii=i+1;
+    }else if(nxr>1 && nyr>1) {
+	  ii=i+1;jj=j+1;
+    }
+
+    j2 = ser_index_r(ii,j);
+    j3 = ser_index_r(i,jj);
+    j4 = ser_index_r(ii,jj);
+
+    //cerr << j1 << " " << j2 << " " << j3 << " " << j4 << "\n";
+
 }
 
 void Interface3d::cellNormKernel(int icell, double& fac) const // Added
 {
     Index2d index=node_index_r(cell_index_r[icell-1]);
     int i=index.i(), j=index.j();
-    double dx=xpos[i]-xpos[i-1];
-    double dy=ypos[j]-ypos[j-1];
+    double dx,dy;
+
+    if(nxr>1 && nyr>1) {
+	dx=xpos[i]-xpos[i-1];
+	dy=ypos[j]-ypos[j-1];
+    }else if(nxr==1 && nyr>1) {
+	dx=1;
+    	dy=ypos[j]-ypos[j-1];
+    }else if(nxr>1 && nyr==1) {
+	dx=xpos[i]-xpos[i-1];
+    	dy=1;
+    }else if(nxr==1 && nyr==1) {
+	dx=1;
+    	dy=1;
+    }
+
     fac = sqrt(dx*dy);
+
 }
 
 void Interface3d::set(const Array1d<double>& a)

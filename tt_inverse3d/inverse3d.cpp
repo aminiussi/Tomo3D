@@ -875,7 +875,7 @@ void TomographicInversion3d::add_kernel_refl(map<int,double>& A_i, const Array1d
     if (!jLF){
         cerr << "TomographicInversion3d::add_kernel_refl: bottoming point out of bounds\n"
              << "x=" << cur_path(ir0).x() << " y=" << cur_path(ir0).y() << '\n';
-        return; // ignore this ray info
+        return; // ignore this ray info, why?
     }
 
     Point3d a = cur_path(ir0-1)-cur_path(ir0);
@@ -1214,11 +1214,11 @@ void TomographicInversion3d::calc_damping_matrix()
         local_T.resize(8,8);
         j.resize(8);
     }
-    
+
     for (int i=1; i<=slowness_mesh().numCells(); i++){
         slowness_mesh().cellNodes(i, j);
         slowness_mesh().cellNormKernel(i, local_T);
-        
+
         if (do_squeezing){
             Point3d p(0,0,0);
             for (int k = 1; k <= j.size(); ++k) {
@@ -1254,12 +1254,23 @@ void TomographicInversion3d::calc_refl_damping_matrix() // variable interval ver
     std::vector<int> r(4);
     Array2d<double> Td_local(4,4);
     double fac;
+
+//    cerr << ":: calc_refl_damping_matrix. Num Loop" << reflp->numCells()<<"\n";
+
     for (int i=1; i<=reflp->numCells(); i++){
+
+
         reflp->cellNodes(i,r[0],r[1],r[2],r[3]);
         reflp->cellNormKernel(i,fac);
         Td_local = Td_common * fac;
+
+//	cerr << "antes add_global " << r[0] << " " << r[1] << " " << r[2] << " " << r[3] << "\n";
+
         add_global(Td_local, r, Td);
+
     }
+
+
 }
 
 void TomographicInversion3d::calc_anid_damping_matrix()
@@ -1327,13 +1338,17 @@ void
 TomographicInversion3d::add_global(Array2d<double> const& a,
                                    std::vector<int> const& j, sparse_matrix& global) 
 {
+
     assert(j.size() == a.nCol());
     assert(j.size() == a.nRow());
+
     for (int m=1; m <= j.size(); ++m){
         for ( int n=1; n <= j.size(); ++n){
             global(j[m-1])[j[n-1]] += a(m,n);
+	    //cerr << "m, n: " << m << " " << n << " " << a(m,n) << "\n";
         }
     }
+
 }
 
 double TomographicInversion3d::calc_ave_dmv()
@@ -1940,6 +1955,8 @@ double TomographicInversion3d::auto_damping_depth(double wdv, double wdad, doubl
                    damp_velocity,wdv,true,wd1,damp_anid,wdad,damp_anie,wdae); n++;
     fl = calc_ave_dmd()-target_dd;
 
+  //  cerr << "f1: " << fl << "\n";
+
     if (is_verbose(0)){
         cerr << "\t\tave_dmd = " << (fl+target_dd)*100 << "% at wd1("
              << wd1 << ")\n";
@@ -1948,6 +1965,9 @@ double TomographicInversion3d::auto_damping_depth(double wdv, double wdad, doubl
 		   smooth_anid,weight_s_ad,smooth_anie,weight_s_ae,
                    damp_velocity,wdv,true,wd2,damp_anid,wdad,damp_anie,wdae); n++;
     f = calc_ave_dmd()-target_dd;
+
+//    cerr << "f2: " << f << "\n";
+
 
     if (is_verbose(0)){
         cerr << "\t\tave_dmd = " << (f+target_dd)*100 << "% at wd2("
