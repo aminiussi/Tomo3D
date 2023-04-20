@@ -234,7 +234,7 @@ int main(int argc, char** argv)
 
 		}
 
-//std::cout << "NUMEROS " << xorder << ", " << yorder << ", " << zorder << ", " << crit_len << ", " << nintp << ", " << bend_cg_tol << ", " << bend_br_tol << '\n';
+std::cout << "NUMEROS " << xorder << ", " << yorder << ", " << zorder << ", " << crit_len << ", " << nintp << ", " << bend_cg_tol << ", " << bend_br_tol << '\n';
 
 
 		break;
@@ -253,6 +253,7 @@ int main(int argc, char** argv)
 		break;
 	    case 'F':
 		reflfn = &argv[i][2];
+                getRefl=true;
 		break;
 	    case 'd':
 		anidfn = &argv[i][2];
@@ -625,7 +626,8 @@ int main(int argc, char** argv)
                         damp_velfn = damp_velfn3d.c_str();
                 }
 
-    }
+    } //el problema esta aqui
+
 
     SlownessMesh3d smesh(meshfn);
 
