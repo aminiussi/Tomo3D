@@ -466,8 +466,6 @@ TomographicInversion3d::solve(int niter)
     typedef map<int,double>::const_iterator mapBrowser;
     {
 
-	cerr << "DENTRO DE SOLVE"<< "\n";
-
         ostream_ptr log = log_stream();
         if (log){
             *log << "# strategy " << jumping << " " << robust << " " << crit_chi << '\n'
@@ -622,35 +620,35 @@ TomographicInversion3d::solve(int niter)
 
 		// construct total kernel matrix and data vector, and solve Ax=b
 		if (smooth_velocity && !fv) {
-	                std::cout << "ENTRA: CALC_AV_MATRIX: " << '\n';
+//	                std::cerr << "CALC_AV_MATRIX: " << '\n';
 			calc_averaging_matrix();
 		}
 		if (smooth_anid && !fad){
-	                std::cout << "ENTRA: CALC_ANID_AV_MATRIX: " << '\n';
+//	                std::cerr << "CALC_ANID_AV_MATRIX: " << '\n';
 			calc_anid_averaging_matrix();
 		}
 		if (smooth_anie && !fae){
-	                std::cout << "ENTRA: CALC_ANIE_AV_MATRIX: " << '\n';
+//	                std::cerr << "CALC_ANIE_AV_MATRIX: " << '\n';
 			calc_anie_averaging_matrix();
 		}
 		if (reflp && smooth_depth && !fd) {
-	                std::cout << "ENTRA: CALC_REFL_AV_MATRIX: " << '\n';
+//	                std::cerr << "CALC_REFL_AV_MATRIX: " << '\n';
 			calc_refl_averaging_matrix();
 		}
 		if (damp_velocity && !fv) {
-	                std::cout << "ENTRA: CALC_DAMPING_MATRIX: " << '\n';
+//	                std::cerr << "CALC_DAMPING_MATRIX: " << '\n';
 			calc_damping_matrix();
 		}
 		if (reflp && damp_depth && !fd) {
-	                std::cout << "ENTRA: CALC_REFL_DAMPING_MATRIX: " << '\n';
+//	                std::cerr << "CALC_REFL_DAMPING_MATRIX: " << '\n';
 			calc_refl_damping_matrix();
 		}
 		if (damp_anid && !fad){
-	                std::cout << "ENTRA: CALC_ANID_DAMPING_MATRIX: " << '\n';
+//	                std::cerr << "CALC_ANID_DAMPING_MATRIX: " << '\n';
 		    calc_anid_damping_matrix();
 		}
 		if (damp_anie && !fae){
-	                std::cout << "ENTRA: CALC_ANIE_DAMPING_MATRIX: " << '\n';
+//	                std::cerr << "CALC_ANIE_DAMPING_MATRIX: " << '\n';
 		    calc_anie_damping_matrix();
 		}
 

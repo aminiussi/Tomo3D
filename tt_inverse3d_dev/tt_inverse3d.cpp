@@ -113,13 +113,12 @@ int main(int argc, char** argv)
     const char *corr_anidfn, *corr_aniefn;
     const char *damp_velfn, *damp_anidfn, *damp_aniefn;
 
-
     bool printFinalOnly=false;
     bool auto_damping=false, fixed_damping=false, jumping=false;
-    bool getDamp3d=false, getDamp3dD=false, getDamp3dE=false; 
+    bool getDamp3d=false, getDamp3dD=false, getDamp3dE=false;
     bool getDamp=false;
 
-    bool fv=false, fd=false, fad=true, fae=true;//Models to be inverted (0) and to be fixed (1).
+    bool fv=false, fd=false, fad=false, fae=false;//Models to be inverted (false) and to be fixed (true).
 
     int nb_threads = 1;
     bool dump_placement = false;
@@ -159,7 +158,7 @@ int main(int argc, char** argv)
             switch(argv[i][1]){
             case '2':
                 get2d3d = true;
-                str_add=".3d";  // estela
+                str_add=".3d";
                 break;
 	    case 'M':
 		meshfn = &argv[i][2];
@@ -173,10 +172,10 @@ int main(int argc, char** argv)
 		int a, b, c, d;
 		if(sscanf(&argv[i][2], "%d/%d/%d/%d", &a, &b, &c, &d)==4){
 		    if((a==0 || a==1) && (b==0 || b==1) && (c==0 || c==1) && (d==0 || d==1)){
-			fv=a;//pwave
-			fd=b;//refl
-			fad=c;//delta
-			fae=d;//epsilon
+			if(a==1)fv=true;
+			if(b==1)fd=true;
+			if(c==1)fad=true;
+			if(d==1)fae=true;
 		    }else{
 			error("the four values for -p option must be either 0 or 1.\n");
 		    }
@@ -199,49 +198,44 @@ int main(int argc, char** argv)
 		int tmp1a, tmp1b, tmp1c, tmp3;
 		double tmp2, tmp4, tmp5;
 
-                //Estela
-
 		if(get2d3d)	{
 
-                if (sscanf(&argv[i][2], "%d/%d/%lf/%d/%lf/%lf",
-                           &tmp1b, &tmp1c, &tmp2, &tmp3, &tmp4, &tmp5)==6){
-                    if (tmp1b>0 && tmp1c>0 && tmp2>0 && tmp3>0 && tmp4>0 && tmp5>0){
-                        xorder=1;
-                        yorder=tmp1b;
-                        zorder=tmp1c;
-                        crit_len=tmp2;
-                        nintp=tmp3;
-                        bend_cg_tol=tmp4;
-                        bend_br_tol=tmp5;
-                    }else{
-                        error("invalid -N option, ignored.\n");
-                    }
-                }
+	                if (sscanf(&argv[i][2], "%d/%d/%lf/%d/%lf/%lf",
+	                           &tmp1b, &tmp1c, &tmp2, &tmp3, &tmp4, &tmp5)==6){
+	                    if (tmp1b>0 && tmp1c>0 && tmp2>0 && tmp3>0 && tmp4>0 && tmp5>0){
+	                        xorder=1;
+	                        yorder=tmp1b;
+	                        zorder=tmp1c;
+	                        crit_len=tmp2;
+	                        nintp=tmp3;
+	                        bend_cg_tol=tmp4;
+	                        bend_br_tol=tmp5;
+	                    }else{
+	                        error("invalid -N option, ignored.\n");
+	                    }
+	                }
 
 		} else {
 
-		if (sscanf(&argv[i][2], "%d/%d/%d/%lf/%d/%lf/%lf",
-			   &tmp1a, &tmp1b, &tmp1c, &tmp2, &tmp3, &tmp4, &tmp5)==7){
-		    if (tmp1a>0 && tmp1b>0 && tmp1c>0 && tmp2>0 && tmp3 > 0 && tmp4>0 && tmp5>0){
-			xorder=tmp1a;
-                        yorder=tmp1b;
-                        zorder=tmp1c;
-			crit_len=tmp2;
-			nintp=tmp3;
-			bend_cg_tol=tmp4;
-			bend_br_tol=tmp5;
-		    }else{
-			error("invalid -N option, ignored.\n");
-		    }
-		}
+			if (sscanf(&argv[i][2], "%d/%d/%d/%lf/%d/%lf/%lf",
+				   &tmp1a, &tmp1b, &tmp1c, &tmp2, &tmp3, &tmp4, &tmp5)==7){
+			    if (tmp1a>0 && tmp1b>0 && tmp1c>0 && tmp2>0 && tmp3 > 0 && tmp4>0 && tmp5>0){
+				xorder=tmp1a;
+        	                yorder=tmp1b;
+        	                zorder=tmp1c;
+				crit_len=tmp2;
+				nintp=tmp3;
+				bend_cg_tol=tmp4;
+				bend_br_tol=tmp5;
+			    }else{
+				error("invalid -N option, ignored.\n");
+			    }
+			}
 
 		}
-
-//std::cout << "NUMEROS " << xorder << ", " << yorder << ", " << zorder << ", " << crit_len << ", " << nintp << ", " << bend_cg_tol << ", " << bend_br_tol << '\n';
-
-
 		break;
 	    }
+
 	    case 'P':
 		jumping = true; // pure jumping strategy
 		break;
@@ -309,6 +303,7 @@ int main(int argc, char** argv)
 		switch (argv[i][2]){
 		case 'V':
 		{
+
 		    double a, b, c;
 		    int nitem=sscanf(&argv[i][3], "%lf/%lf/%lf", &a, &b, &c);
 		    if (nitem==1){ wsv_min=a; wsv_max=a; dwsv=a+1.0; }
@@ -318,7 +313,6 @@ int main(int argc, char** argv)
 			gotError=true;
 		    }
 
-	            std::cout << "ENTRA: VELOCITY SMOOTHING: " << '\n';
 		    smooth_vel = true;
 		    break;
 		}
@@ -488,10 +482,6 @@ int main(int argc, char** argv)
 	}
     }
 
-    std::cout << "TEST: VELOCITY SMOOTHING: " << smooth_vel << '\n';
-
-// Aqui empiezan las llamadas a funciones
-
     if (solver_name == "omp")  {
         select_in_house_omp_solver();
     } else if (solver_name == "nothread" || solver_name == "default" )  {
@@ -576,9 +566,6 @@ int main(int argc, char** argv)
             }
         }
     }
-
-
-/* Llamada a distintas funciones, se crea el objeto inv */
 
     if (get2d3d) {	//transformacion input de tomo2d a tomo3d
 
@@ -794,15 +781,13 @@ int main(int argc, char** argv)
 	inv.onlyForward(first_iter);
     }
 
-    cerr << "LLAMA FIXING "<< "\n";
+//    cerr << "... FIXING "<< fv << fd << fad << fae <<"\n";
 
     inv.fixing(fv,fd,fad,fae);
 
-    cerr << "LLAMA SOLVE "<< "\n";
+//    cerr << "... SOLVE "<< "\n";
 
     inv.solve(niter);
-
-    cerr << "SALE SOLVE "<< "\n";
 
     if (forward){
 	ofstream os(synfn);

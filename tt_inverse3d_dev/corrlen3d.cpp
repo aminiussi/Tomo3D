@@ -250,8 +250,6 @@ DampingWeight3d::DampingWeight3d(const char* fn)
 void DampingWeight3d::upperleft(const Point3d& p, Index3d& guess) const
 {
 
-//   cerr << "ENTRA EN UPPERLEFT" << "\n";
-
     // note: this code guarantees that the final guess index is bounded by
     //       valid range (1...nx-1)(1...ny-1)(1...nz-1).
     int i_guess=1, j_guess=1, k_guess=1;
