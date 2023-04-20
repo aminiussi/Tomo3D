@@ -16,8 +16,8 @@ impi_compile_flags=$(mpicc -showme:compile)
 impi_link_flags=$(mpicc -showme:link)
 
 flavor="Release"
-boost_root="/home/user/folder/boost_1_62_0"
-src="/home/user/folder/tt_inverse3d_dev"
+boost_root="/home/folder/boost_1_62_0"
+src="/home/folder/tt_inverse3d_dev"
 
 cmd="$cmake_engine -DMPI_COMPILE_FLAGS=\"$impi_compile_flags\" -DMPI_LINK_FLAGS=\"$impi_link_flags\" -DMPIEXEC=mpiexec -DMPIEXEC_NUMPROC_FLAG="-np" -DCMAKE_BUILD_TYPE=$flavor -DBOOST_ROOT=$boost_root $src"
 #echo $cmd

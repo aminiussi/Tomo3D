@@ -39,11 +39,11 @@ public:
 
 	data_2d3d(int nxx, int nzz, std::string const& input2D, std::string const& input3D);
 	~data_2d3d();
-	void meshfn_2d3d(int option);
-	void datafn_2d3d();
-	void reflfn_2d3d();
-        void corr_velfn_2d3d();
-        void corr_depfn_2d3d();
+	void meshfn_2d3d(int option);//para modelos Vp, ani
+	void datafn_2d3d();//datos TTT
+	void reflfn_2d3d();//reflector
+        void corr_fn_2d3d();//correlations
+        void corr_depfn_2d3d();//para reflector
 
 };//class
 

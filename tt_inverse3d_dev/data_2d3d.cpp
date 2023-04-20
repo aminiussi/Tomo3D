@@ -48,8 +48,8 @@ void data_2d3d :: meshfn_2d3d(int option) {
 
 // INPUT MODELO DE VELOCIDAD
 
-	if(option==0)file >> ny >> nz >> vw >> va;//lee Vp
-	if(option==1)file >> ny >> nz;	 	  //lee Damping
+	if(option==0)file >> ny >> nz >> vw >> va;//lee Vp,anisotropia
+	if(option==1)file >> ny >> nz;	 	  //lee Dampings
 
 // Asignacion memoria dinamica
 
@@ -150,7 +150,7 @@ void data_2d3d :: reflfn_2d3d() {
 
 }
 
-void data_2d3d :: corr_velfn_2d3d() {
+void data_2d3d :: corr_fn_2d3d() {
 
         file >> num_y >> num_z;
         file >> ymin >> ymax;

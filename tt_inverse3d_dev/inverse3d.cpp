@@ -433,7 +433,6 @@ void TomographicInversion3d::add_anisotropy(boost::shared_ptr<AnisotropyMesh3d> 
 					    boost::shared_ptr<AnisotropyMesh3d> const& aniep)
 {
     ani = true;
-
     anid = anidp;
     anie = aniep;
 
@@ -1891,13 +1890,13 @@ void TomographicInversion3d::auto_damping(int& iter, int& n, double& wdv, double
 	ave_dmd0 = calc_ave_dmd();
     }
     double ave_dmad0;
-    if(fad){
+    if(fad){//anadir if(ani &&
 	ave_dmad0 = -1.0;
     }else{
 	ave_dmad0 = calc_ave_dmad();
     }
     double ave_dmae0;
-    if(fae){
+    if(fae){//anadir if(ani &&
 	ave_dmae0 = -1.0;
     }else{
 	ave_dmae0 = calc_ave_dmae();

@@ -60,6 +60,9 @@ int main(int argc, char** argv)
     std::string corr_depfn3d;   // estela
     std::string damp_velfn3d;   // estela
     std::string str_add;        // estela
+    std::string anidfn3d, aniefn3d; //estela
+    std::string corr_anidfn3d, corr_aniefn3d;//estela
+    std::string damp_anidfn3d, damp_aniefn3d;//estela
     int cero=0, one=1;		//estela
     int nxy=0,nzz=0;		//estela
 
@@ -106,7 +109,6 @@ int main(int argc, char** argv)
 //    char *corr_anidfn, *corr_aniefn;
 //    char *damp_velfn, *damp_anidfn, *damp_aniefn;
 
-
     const char *corr_velfn, *corr_depfn;
     const char *corr_anidfn, *corr_aniefn;
     const char *damp_velfn, *damp_anidfn, *damp_aniefn;
@@ -117,7 +119,7 @@ int main(int argc, char** argv)
     bool getDamp3d=false, getDamp3dD=false, getDamp3dE=false; 
     bool getDamp=false;
 
-    bool fv=false, fd=false, fad=false, fae=false;
+    bool fv=false, fd=false, fad=true, fae=true;//Models to be inverted (0) and to be fixed (1).
 
     int nb_threads = 1;
     bool dump_placement = false;
@@ -580,7 +582,6 @@ int main(int argc, char** argv)
 
     if (get2d3d) {	//transformacion input de tomo2d a tomo3d
 
-
 		if(getMesh)	{
 	                temp=meshfn;
 	                std::ifstream file_2d3d(temp);
@@ -606,7 +607,7 @@ int main(int argc, char** argv)
 	                corr_velfn3d=corr_velfn;
         	        corr_velfn3d +=str_add;
 	                data_2d3d new_corr_velfn(nxy,nzz,corr_velfn,corr_velfn3d);
-	                new_corr_velfn.corr_velfn_2d3d();
+	                new_corr_velfn.corr_fn_2d3d();
 	                corr_velfn=corr_velfn3d.c_str();
 		}
 
@@ -636,12 +637,51 @@ int main(int argc, char** argv)
 
 
                 if(getAniD)     {//hacer
+                        anidfn3d = anidfn;
+                        anidfn3d += str_add;
+                        data_2d3d new_anidfn(nxy,nzz,anidfn,anidfn3d);
+                        new_anidfn.meshfn_2d3d(cero);
+                        anidfn = anidfn3d;
                 }
+
                 if(getAniE)     {//hacer
+                        aniefn3d = aniefn;
+                        aniefn3d += str_add;
+                        data_2d3d new_aniefn(nxy,nzz,aniefn,aniefn3d);
+                        new_aniefn.meshfn_2d3d(cero);
+                        aniefn = aniefn3d;
                 }
+
+                if(getDamp3dD)     {//hacer
+                        damp_anidfn3d = damp_anidfn;
+                        damp_anidfn3d += str_add;
+                        data_2d3d new_damp_anidfn(nxy,nzz,damp_anidfn,damp_anidfn3d);
+                        new_damp_anidfn.meshfn_2d3d(one);
+                        damp_anidfn = damp_anidfn3d.c_str();
+                }
+
+                if(getDamp3dE)     {//hacer
+                        damp_aniefn3d = damp_aniefn;
+                        damp_aniefn3d += str_add;
+                        data_2d3d new_damp_aniefn(nxy,nzz,damp_aniefn,damp_aniefn3d);
+                        new_damp_aniefn.meshfn_2d3d(one);
+                        damp_aniefn = damp_aniefn3d.c_str();
+                }
+
                 if(getCorrAniD)     {//hacer
+	                corr_anidfn3d=corr_anidfn;
+        	        corr_anidfn3d +=str_add;
+	                data_2d3d new_corr_anidfn(nxy,nzz,corr_anidfn,corr_anidfn3d);
+	                new_corr_anidfn.corr_fn_2d3d();//
+	                corr_anidfn=corr_anidfn3d.c_str();
                 }
+
                 if(getCorrAniE)     {//hacer
+	                corr_aniefn3d=corr_aniefn;
+        	        corr_aniefn3d +=str_add;
+	                data_2d3d new_corr_aniefn(nxy,nzz,corr_aniefn,corr_aniefn3d);
+	                new_corr_aniefn.corr_fn_2d3d();//
+	                corr_aniefn=corr_aniefn3d.c_str();
                 }
 
     }
