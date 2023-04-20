@@ -10,7 +10,7 @@ class data_2d3d {
 
 private:
 
-        int             nx,ny,nz;
+        int             nx,ny,nz,nyr;
         double          plane,dif;
         int             ns,npicks,raycode;
         double          vw,va,tt,dt;

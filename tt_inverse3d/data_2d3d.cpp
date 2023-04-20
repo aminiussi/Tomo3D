@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <cstdio>
+#include <string>
 #include "data_2d3d.hpp"
 
 using namespace std;
@@ -10,6 +11,7 @@ data_2d3d :: data_2d3d(int nn, int nzz, std::string const& input2D, std::string 
 	nx=1;
 	ny=nn;
 	nz=nzz;
+	nyr=0;
 	dif=0.;
 	plane=0;
 	ns=0,npicks=0,raycode=0;
@@ -137,11 +139,25 @@ void data_2d3d :: datafn_2d3d() {
 
 void data_2d3d :: reflfn_2d3d() {
 
+	string line;
+	nyr=0;
+	while (!file.eof())
+	{
+		getline(file, line);
+		nyr++;
+	}
+	nyr--;
+
+	file.clear();
+	file.seekg(0, ios::beg);
+
+	//cerr<<"***** numlines reflector: "<<nyr<<"\n";
+
 	// INPUT REFLECTOR
 
-	file3D << nx << '\t' << ny << '\n';
+	file3D << nx << '\t' << nyr << '\n';
 
-	for(int j=0;j<ny;j++) {
+	for(int j=0;j<nyr;j++) {
 
 		file >> ref >> depth;
 		file3D << plane << '\t' << ref << '\t' << depth << '\n';
