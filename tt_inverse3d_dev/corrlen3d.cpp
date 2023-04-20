@@ -209,11 +209,23 @@ DampingWeight3d::DampingWeight3d(const char* fn)
 	}
     }
 
-    rdx_vec.resize(nx-1);
-    rdy_vec.resize(ny-1);
-    rdz_vec.resize(nz-1);
-    bx_vec.resize(nx-1,ny);
-    by_vec.resize(nx,ny-1);
+
+    if(nx>1)rdx_vec.resize(nx-1);
+    if(nx==1)rdx_vec.resize(1);
+
+    if(ny>1)rdy_vec.resize(ny-1);
+    if(ny==1)rdy_vec.resize(1);
+
+    if(nz>1)rdz_vec.resize(nz-1);
+    if(nz==1)rdz_vec.resize(1);
+
+    if(nx>1)bx_vec.resize(nx-1,ny);
+    if(nx==1)bx_vec.resize(1,ny);
+
+    if(ny>1)by_vec.resize(nx,ny-1);
+    if(ny==1)by_vec.resize(nx,1);
+
+
     for (int i=1; i<nx; i++){
 	rdx_vec(i) = 1.0/(xpos[i]-xpos[i-1]);
     }
@@ -237,37 +249,63 @@ DampingWeight3d::DampingWeight3d(const char* fn)
 
 void DampingWeight3d::upperleft(const Point3d& p, Index3d& guess) const
 {
+
+//   cerr << "ENTRA EN UPPERLEFT" << "\n";
+
     // note: this code guarantees that the final guess index is bounded by
     //       valid range (1...nx-1)(1...ny-1)(1...nz-1).
     int i_guess=1, j_guess=1, k_guess=1;
-  
-    if (xpos[i_guess-1]<=p.x()){
-	if (i_guess < nx) i_guess++;
-	while (xpos[i_guess-1]<=p.x() && i_guess<nx) i_guess++;
-	i_guess--;
-    }else{
-	while (xpos[i_guess-1]>p.x() && i_guess>1) i_guess--;
+
+//    cerr << "UPPERLEFT, xpos, p.x(): " << i_guess << ", " << xpos[i_guess-1] << ", " << p.x() << "\n";
+//    cerr << "UPPERLEFT, ypos, p.y(): " << j_guess << ", " << ypos[j_guess-1] << ", " << p.y() << "\n";
+//    cerr << "UPPERLEFT, zpos, p.z(): " << k_guess << ", " << zpos[k_guess-1] << ", " << p.z() << "\n";
+
+   if(nx>1)	{
+	    if (xpos[i_guess-1]<=p.x()){
+	        if (i_guess < nx) i_guess++;
+	        while (xpos[i_guess-1]<=p.x() && i_guess<nx) i_guess++;
+	        i_guess--;
+	    }else{
+		while (xpos[i_guess-1]>p.x() && i_guess>1) i_guess--;
+	    }
     }
-  
-    if (ypos[j_guess-1]<=p.y()){
-	if (j_guess < ny) j_guess++;
-	while (ypos[j_guess-1]<=p.y() && j_guess<ny) j_guess++;
-	j_guess--;
-    }else{
-	while (ypos[j_guess-1]>p.y() && j_guess>1) j_guess--;
-    }
+
+   if(ny>1)	{
+
+	    if (ypos[j_guess-1]<=p.y()){
+	        if (j_guess < ny) j_guess++;
+	        while (ypos[j_guess-1]<=p.y() && j_guess<ny) j_guess++;
+	        j_guess--;
+	    }else{
+		while (ypos[j_guess-1]>p.y() && j_guess>1) j_guess--;
+	    }
+   }
+
+
+   if(i_guess<1) cerr << "ERROR INDEX i: " << i_guess << "\n";
+   if(j_guess<1) cerr << "ERROR INDEX j: " << j_guess << "\n";
 
     double rx = (p.x()-xpos[i_guess-1])*rdx_vec(i_guess);
     double ry = (p.y()-ypos[j_guess-1])*rdy_vec(j_guess);
     double dz = rx*bx_vec(i_guess,j_guess)+ry*by_vec(i_guess,j_guess)+topo(i_guess,j_guess);
-    if (zpos[k_guess-1]+dz<=p.z()){
-	if (k_guess < nz) k_guess++;
-	while (zpos[k_guess-1]+dz<=p.z() && k_guess<nz) k_guess++;
-	k_guess--;
-    }else{
-	while (zpos[k_guess-1]+dz>p.z() && k_guess>1) k_guess--;
-    }
+
+   if(nz>1)	{
+
+	    if (zpos[k_guess-1]+dz<=p.z()){
+	        if (k_guess < nz) k_guess++;
+	        while (zpos[k_guess-1]+dz<=p.z() && k_guess<nz) k_guess++;
+	        k_guess--;
+	    }else{
+		while (zpos[k_guess-1]+dz>p.z() && k_guess>1) k_guess--;
+	    }
+
+   }
+
+   if(k_guess<1) cerr << "ERROR INDEX k: " << k_guess << "\n";
+
     guess.set(i_guess,j_guess,k_guess);
+
+
 }
 
 void DampingWeight3d::calc_local(const Point3d& pos, int i, int j, int k,

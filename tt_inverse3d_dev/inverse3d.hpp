@@ -80,7 +80,7 @@ public:
     void DampDepth(double);
     void DampAniD(double);
     void DampAniE(double);
-    void FixDamping(double, double, double, double);
+    void FixDamping(bool, bool, double, double, double, double);
     void Squeezing(const char*);
     void SqueezingD(const char*);
     void SqueezingE(const char*);

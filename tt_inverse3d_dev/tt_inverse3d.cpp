@@ -95,7 +95,7 @@ int main(int argc, char** argv)
     double wsad_min=-1, wsad_max=-1, dwsad=-1;
     double wsae_min=-1, wsae_max=-1, dwsae=-1;
     double max_dv=-1, max_dd=-1, max_dad=-1, max_dae=-1;
-    double wdv=-1, wdd=-1, wdad=-1, wdae=-1;
+    double wdv=0, wdd=0, wdad=0, wdae=0;
     double target_chisq=0;
     bool vlogscale=false, dlogscale=false;
     bool adlogscale=false, aelogscale=false;
@@ -114,7 +114,8 @@ int main(int argc, char** argv)
 
     bool printFinalOnly=false;
     bool auto_damping=false, fixed_damping=false, jumping=false;
-    bool getDamp3d=false, getDamp3dD=false, getDamp3dE=false;
+    bool getDamp3d=false, getDamp3dD=false, getDamp3dE=false; 
+    bool getDamp=false;
 
     bool fv=false, fd=false, fad=false, fae=false;
 
@@ -170,10 +171,10 @@ int main(int argc, char** argv)
 		int a, b, c, d;
 		if(sscanf(&argv[i][2], "%d/%d/%d/%d", &a, &b, &c, &d)==4){
 		    if((a==0 || a==1) && (b==0 || b==1) && (c==0 || c==1) && (d==0 || d==1)){
-			fv=a;
-			fd=b;
-			fad=c;
-			fae=d;
+			fv=a;//pwave
+			fd=b;//refl
+			fad=c;//delta
+			fae=d;//epsilon
 		    }else{
 			error("the four values for -p option must be either 0 or 1.\n");
 		    }
@@ -234,7 +235,7 @@ int main(int argc, char** argv)
 
 		}
 
-std::cout << "NUMEROS " << xorder << ", " << yorder << ", " << zorder << ", " << crit_len << ", " << nintp << ", " << bend_cg_tol << ", " << bend_br_tol << '\n';
+//std::cout << "NUMEROS " << xorder << ", " << yorder << ", " << zorder << ", " << crit_len << ", " << nintp << ", " << bend_cg_tol << ", " << bend_br_tol << '\n';
 
 
 		break;
@@ -253,7 +254,7 @@ std::cout << "NUMEROS " << xorder << ", " << yorder << ", " << zorder << ", " <<
 		break;
 	    case 'F':
 		reflfn = &argv[i][2];
-                getRefl=true;
+		getRefl=true;
 		break;
 	    case 'd':
 		anidfn = &argv[i][2];
@@ -314,6 +315,8 @@ std::cout << "NUMEROS " << xorder << ", " << yorder << ", " << zorder << ", " <<
 			cerr << "invalid -SV option.\n";
 			gotError=true;
 		    }
+
+	            std::cout << "ENTRA: VELOCITY SMOOTHING: " << '\n';
 		    smooth_vel = true;
 		    break;
 		}
@@ -423,14 +426,17 @@ std::cout << "NUMEROS " << xorder << ", " << yorder << ", " << zorder << ", " <<
 		    wdae = atof(&argv[i][3]);
 		    break;
 		case 'Q':
+		    getDamp=true;
 		    getDamp3d=true;
 		    damp_velfn = &argv[i][3];
 		    break;
 		case 'R':
+		    getDamp=true;
 		    getDamp3dD=true;
 		    damp_anidfn = &argv[i][3];
 		    break;
 		case 'S':
+		    getDamp=true;
 		    getDamp3dE=true;
 		    damp_aniefn = &argv[i][3];
 		    break;
@@ -479,6 +485,8 @@ std::cout << "NUMEROS " << xorder << ", " << yorder << ", " << zorder << ", " <<
             break;
 	}
     }
+
+    std::cout << "TEST: VELOCITY SMOOTHING: " << smooth_vel << '\n';
 
 // Aqui empiezan las llamadas a funciones
 
@@ -626,8 +634,17 @@ std::cout << "NUMEROS " << xorder << ", " << yorder << ", " << zorder << ", " <<
                         damp_velfn = damp_velfn3d.c_str();
                 }
 
-    } //el problema esta aqui
 
+                if(getAniD)     {//hacer
+                }
+                if(getAniE)     {//hacer
+                }
+                if(getCorrAniD)     {//hacer
+                }
+                if(getCorrAniE)     {//hacer
+                }
+
+    }
 
     SlownessMesh3d smesh(meshfn);
 
@@ -715,7 +732,6 @@ std::cout << "NUMEROS " << xorder << ", " << yorder << ", " << zorder << ", " <<
 
     if (target_chisq>0) inv.targetChisq(target_chisq);
 
-
     // In this if-condition include anisotropy damping
     if (auto_damping){
         if (max_dv>0) inv.DampVelocity(max_dv);
@@ -723,18 +739,13 @@ std::cout << "NUMEROS " << xorder << ", " << yorder << ", " << zorder << ", " <<
         if (max_dad>0) inv.DampAniD(max_dad);
         if (max_dae>0) inv.DampAniE(max_dae);
     }else if (fixed_damping){
-            inv.FixDamping(wdv,wdd,wdad,wdae);
-            if (getDamp3d){
-                inv.Squeezing(damp_velfn);
-            }
-            if (getDamp3dD){
-                inv.SqueezingD(damp_anidfn);
-            }
-            if (getDamp3dE){
-                inv.SqueezingE(damp_aniefn);
-            }
+        if (wdv>=0 && wdd>=0 && wdad>=0 && wdae>=0){//esto siempre es asi
+		inv.FixDamping(getAniE,getAniD,wdv,wdd,wdad,wdae);//damping fijo, opcion -DD -DV o tb -DQ??? ojo duda
+        	if (getDamp3d)  inv.Squeezing(damp_velfn);//error due to upperleft() segmentation fault
+        	if (getDamp3dD) inv.SqueezingD(damp_anidfn);//""
+        	if (getDamp3dE) inv.SqueezingE(damp_aniefn);//""
+	}
     }
-
 
     if (jumping) inv.doJumping();
 
@@ -743,8 +754,15 @@ std::cout << "NUMEROS " << xorder << ", " << yorder << ", " << zorder << ", " <<
 	inv.onlyForward(first_iter);
     }
 
+    cerr << "LLAMA FIXING "<< "\n";
+
     inv.fixing(fv,fd,fad,fae);
+
+    cerr << "LLAMA SOLVE "<< "\n";
+
     inv.solve(niter);
+
+    cerr << "SALE SOLVE "<< "\n";
 
     if (forward){
 	ofstream os(synfn);

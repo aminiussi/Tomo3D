@@ -24,7 +24,7 @@
 TomographicInversion3d::TomographicInversion3d(boost::mpi::communicator& com,
                                                SlownessMesh3d& m, const char* datafn,
                                                int xorder, int yorder, int zorder, double crit_len,
-                                               int nintp, double cg_tol, double br_tol) // Modified
+                                               int nintp, double cg_tol, double br_tol) 
 
 :   my_com(com), my_graph_solver(m,xorder,yorder,zorder),
     betasp(1,0,nintp),
@@ -37,16 +37,16 @@ TomographicInversion3d::TomographicInversion3d(boost::mpi::communicator& com,
     nz(slowness_mesh().nz()),
     my_velocity_model(),
     my_full_reflection_velocity_model(),
-    itermax_LSQR(nnodev*10), LSQR_ATOL(1e-3), 
+    itermax_LSQR(nnodev*10), LSQR_ATOL(1e-3),
     jumping(false),
     smooth_velocity(false), logscale_vel(false), my_apply_filter(false),
-    wsv_min(0.0), wsv_max(0.0), dwsv(1.0), weight_s_v(0.0), corr_vel_p(0),
+    wsv_min(0.0), wsv_max(0.0), dwsv(1.0), weight_s_v(0.0), corr_vel_p(0),  // original
     smooth_depth(false), logscale_dep(false), wsd_min(0.0),
-    wsd_max(0.0), dwsd(1.0), weight_s_d(0.0), corr_dep_p(0),
+    wsd_max(0.0), dwsd(1.0), weight_s_d(0.0), corr_dep_p(0),  // original
     smooth_anid(false), logscale_anid(false),
     smooth_anie(false), logscale_anie(false),
-    wsad_min(0.0), wsad_max(0.0), dwsad(1.0), weight_s_ad(0.0), corr_anid_p(0),
-    wsae_min(0.0), wsae_max(0.0), dwsae(1.0), weight_s_ae(0.0), corr_anie_p(0),
+    wsad_min(0.0), wsad_max(0.0), dwsad(1.0), weight_s_ad(0.0), corr_anid_p(0),// original
+    wsae_min(0.0), wsae_max(0.0), dwsae(1.0), weight_s_ae(0.0), corr_anie_p(0),// original
     damp_velocity(false), damp_depth(false), damp_anid(false), damp_anie(false),
     target_dv(0.0), target_dd(0.0), target_dad(0.0), target_dae(0.0),
     damping_is_fixed(false), weight_d_v(0.0), weight_d_d(0.0),
@@ -560,30 +560,27 @@ void TomographicInversion3d::DampAniE(double a)
 }
 
 
-void TomographicInversion3d::FixDamping(double v, double d, double ad, double ae)
+void TomographicInversion3d::FixDamping(bool getanid_, bool getanie_, double v, double d, double ad, double ae)
 {
 
     damping_is_fixed = true;
 
-    if(v>=0) {
-            damp_velocity = true;
-            weight_d_v = v;
-    }
+    damp_velocity = true;
+    weight_d_v = v;
 
-    if(d>=0) {
-            damp_depth = true;
-            weight_d_d = d;
-    }
+    damp_depth = true;
+    weight_d_d = d;
 
-    if(ad>=0) {
+    if(getanid_) {
             damp_anid = true;
             weight_d_ad = ad;
     }
 
-    if(ae>=0) {
+    if(getanie_) {
             damp_anie = true;
             weight_d_ae = ae;
     }
+
 
 }
 
@@ -1397,7 +1394,7 @@ square_mean(SparseRectangular const& A, std::vector<double> const& x) {
     return square_mean(b);
 }
 
-void 
+void //
 TomographicInversion3d::calc_Lm(opt_double& lmx, opt_double& lmy, double& lmz, opt_double& lmdx, opt_double& lmdy,
 				opt_double& lmadx, opt_double& lmady, double& lmadz, opt_double& lmaex, opt_double& lmaey, double& lmaez)
 {
@@ -1409,13 +1406,15 @@ TomographicInversion3d::calc_Lm(opt_double& lmx, opt_double& lmy, double& lmz, o
     }else{
 	lmx = lmy = lmz = -1;
     }
+
     if (reflp && smooth_depth && !fd){
-        std::vector<double> dmd(dmodel_total.begin()+nnodev, dmodel_total.begin()+nnodev+nb_noded());        
+        std::vector<double> dmd(dmodel_total.begin()+nnodev, dmodel_total.begin()+nnodev+nb_noded());
         lmdx = xflat() ? opt_double() : opt_double(square_mean(SparseRectangular(rdx(),tmp_nodedr,tmp_nodedr), dmd));
         lmdy = yflat() ? opt_double() : opt_double(square_mean(SparseRectangular(rdy(),tmp_nodedr,tmp_nodedr), dmd));
     }else{
 	lmdx = lmdy = -1;
     }
+
     if (ani && smooth_anid && !fad){
 	std::vector<double> dmad(dmodel_total.begin()+nnode_subtotal, dmodel_total.begin()+nnode_subtotal+nnoded);
         lmadx = xflat() ? opt_double() : opt_double(square_mean(SparseRectangular(radx(),nnoded), dmad));
@@ -1424,6 +1423,7 @@ TomographicInversion3d::calc_Lm(opt_double& lmx, opt_double& lmy, double& lmz, o
     }else{
 	lmadx = lmady = lmadz = -1;
     }
+
     if (ani && smooth_anie && !fae){
 	std::vector<double> dmae(dmodel_total.begin()+nnode_subtotal+nnoded, dmodel_total.begin()+nnode_subtotal+nnoded+nnodee);
         lmaex = xflat() ? opt_double() : opt_double(square_mean(SparseRectangular(raex(),nnodee), dmae));
@@ -1454,7 +1454,7 @@ int TomographicInversion3d::_solve(bool sv, double wsv, bool sd, double wsd,
 				   bool sad, double wsad, bool sae, double wsae,
                                    bool dv, double wdv, bool dd, double wdd,
 				   bool dad, double wdad, bool dae, double wdae)
-{
+{//ojo
     if (is_verbose(0)) {
         std::cerr << "enter TomographicInversion3d::_solve\n";
     }
@@ -1821,10 +1821,13 @@ void TomographicInversion3d::fixed_damping(int& iter, int& n, double& wdv, doubl
     wdd = weight_d_d;
     wdad = weight_d_ad;
     wdae = weight_d_ae;
-    
+
+
     iter += _solve(smooth_velocity,weight_s_v,smooth_depth,weight_s_d,
 		   smooth_anid,weight_s_ad,smooth_anie,weight_s_ae,
-                   true,weight_d_v,true,weight_d_d,true,weight_d_ad,true,weight_d_ae);
+                   true,weight_d_v,true,weight_d_d,
+		   true,weight_d_ad,true,weight_d_ae);//ani
+
     n++;
 
     if (robust){

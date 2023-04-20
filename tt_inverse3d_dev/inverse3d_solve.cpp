@@ -16,7 +16,7 @@
 #include "boost/optional/optional_io.hpp"
 
 #include "geom3d.hpp"
-#include "inverse3d.hpp"
+#include "inverse3d.hpp"	//damping functions
 #include "sparse_rect.hpp"
 #include "axb_solver.hpp"
 #include "d_nr.hpp"
@@ -450,10 +450,11 @@ TomographicInversion3d::filter_velocity_perturbations() {
     {
         ostream_ptr log = log_stream();
         if (log){
-            *log << "# a posteriori filter check: "
+            *log << "# a posteriori filter check, sqrta: "
                  << sqrt(orig_norm/nnodev)
-                 << " " << sqrt(new_norm/nnodev) 
-                 << " " << iprod << endl;
+                 << "sqrtb: " << sqrt(new_norm/nnodev)
+                 << "iprof: " << iprod
+                 << "nnodev: " << nnodev << endl;
         }
     }
 }
@@ -464,6 +465,9 @@ TomographicInversion3d::solve(int niter)
     typedef map<int,double>::iterator mapIterator;
     typedef map<int,double>::const_iterator mapBrowser;
     {
+
+	cerr << "DENTRO DE SOLVE"<< "\n";
+
         ostream_ptr log = log_stream();
         if (log){
             *log << "# strategy " << jumping << " " << robust << " " << crit_chi << '\n'
@@ -479,10 +483,11 @@ TomographicInversion3d::solve(int niter)
 		 << wsad_min << " " << wsad_max << " " << dwsad << '\n'
 		 << "# smooth_anie " << smooth_anie << " "
 		 << wsae_min << " " << wsae_max << " " << dwsae << '\n';
-            if (damping_is_fixed) {
+            if (damping_is_fixed) {//ojo: opcion -DD-DV o tb -DQ?
                 *log << "# fixed_damping " << weight_d_v << " " << weight_d_d 
 		     << " " << weight_d_ad << " " << weight_d_ae << " " << '\n';
-            } else {
+            } else {//auto-damping
+                *log << "# auto_damping " << '\n'; 
                 *log << "# damp_vel " << damp_velocity << " " << target_dv << '\n';
                 *log << "# damp_dep " << damp_depth << " " << target_dd << '\n';
 		*log << "# damp_anid " << damp_anid << " " << target_dad << '\n';
@@ -614,22 +619,38 @@ TomographicInversion3d::solve(int niter)
 			p->second *= m*data_wt;
 		    }
 		}
-		
+
 		// construct total kernel matrix and data vector, and solve Ax=b
-		if (smooth_velocity && !fv) calc_averaging_matrix();
+		if (smooth_velocity && !fv) {
+	                std::cout << "ENTRA: CALC_AV_MATRIX: " << '\n';
+			calc_averaging_matrix();
+		}
 		if (smooth_anid && !fad){
-		    calc_anid_averaging_matrix();
+	                std::cout << "ENTRA: CALC_ANID_AV_MATRIX: " << '\n';
+			calc_anid_averaging_matrix();
 		}
 		if (smooth_anie && !fae){
-		    calc_anie_averaging_matrix();
+	                std::cout << "ENTRA: CALC_ANIE_AV_MATRIX: " << '\n';
+			calc_anie_averaging_matrix();
 		}
-		if (reflp && smooth_depth && !fd) calc_refl_averaging_matrix();
-		if (damp_velocity && !fv) calc_damping_matrix();
-		if (reflp && damp_depth && !fd) calc_refl_damping_matrix();
+		if (reflp && smooth_depth && !fd) {
+	                std::cout << "ENTRA: CALC_REFL_AV_MATRIX: " << '\n';
+			calc_refl_averaging_matrix();
+		}
+		if (damp_velocity && !fv) {
+	                std::cout << "ENTRA: CALC_DAMPING_MATRIX: " << '\n';
+			calc_damping_matrix();
+		}
+		if (reflp && damp_depth && !fd) {
+	                std::cout << "ENTRA: CALC_REFL_DAMPING_MATRIX: " << '\n';
+			calc_refl_damping_matrix();
+		}
 		if (damp_anid && !fad){
+	                std::cout << "ENTRA: CALC_ANID_DAMPING_MATRIX: " << '\n';
 		    calc_anid_damping_matrix();
 		}
 		if (damp_anie && !fae){
+	                std::cout << "ENTRA: CALC_ANIE_DAMPING_MATRIX: " << '\n';
 		    calc_anie_damping_matrix();
 		}
 
@@ -639,12 +660,12 @@ TomographicInversion3d::solve(int niter)
 			for (double tmp_wsad=wsad_min; tmp_wsad<=wsad_max; tmp_wsad+=dwsad){
 			    for (double tmp_wsae=wsae_min; tmp_wsae<=wsae_max; tmp_wsae+=dwsae){
 				iset++;
-				
+
 				weight_s_v = logscale_vel ? pow(10.0,tmp_wsv) : tmp_wsv;
 				weight_s_d = logscale_dep ? pow(10.0,tmp_wsd) : tmp_wsd;
 				weight_s_ad = logscale_anid ? pow(10.0,tmp_wsad) : tmp_wsad;
 				weight_s_ae = logscale_anie ? pow(10.0,tmp_wsae) : tmp_wsae;
-				
+
 				double wdv,wdd,wdad,wdae;
 				int nlsqr=0, lsqr_iter=0;
 				clock_t start_t = clock();
@@ -664,35 +685,39 @@ TomographicInversion3d::solve(int niter)
 				// take stats
 				double pred_chi = calc_chi();
 				double dv_norm;
-				if(fv){
+				if(fv){//fixed model
 				    dv_norm = -1.0;
-				}else{
+				}else{ //to be inverted
 				    dv_norm = calc_ave_dmv();
 				}
+
 				double dd_norm;
 				if(fd){
 				    dd_norm = -1.0;
 				}else{
 				    dd_norm = calc_ave_dmd();
 				}
+
 				double dad_norm;
 				if(fad){
 				    dad_norm = -1.0;
 				}else{
 				    dad_norm = calc_ave_dmad();
 				}
+
 				double dae_norm;
 				if(fae){
 				    dae_norm = -1.0;
 				}else{
 				    dae_norm = calc_ave_dmae();
 				}
+
 				opt_double Lmvx, Lmvy, Lmdx, Lmdy;
 				opt_double Lmadx, Lmady, Lmaex, Lmaey;
 				double Lmvz = std::numeric_limits<double>::quiet_NaN();
 				double Lmadz = std::numeric_limits<double>::quiet_NaN();
 				double Lmaez = std::numeric_limits<double>::quiet_NaN();
-				calc_Lm(Lmvx,Lmvy,Lmvz,Lmdx,Lmdy,Lmadx,Lmady,Lmadz,Lmaex,Lmaey,Lmaez);
+				calc_Lm(Lmvx,Lmvy,Lmvz,Lmdx,Lmdy,Lmadx,Lmady,Lmadz,Lmaex,Lmaey,Lmaez);//ojo
 				
 				if (jumping) dmodel_total_sum += dmodel_total;
 				
@@ -814,23 +839,23 @@ TomographicInversion3d::solve(int niter)
 				    if (log){
 					double graph_time = solver_global.graph_time() / CLOCKS_PER_SEC;
 					double bend_time  = solver_global.bend_time()  / CLOCKS_PER_SEC;
-					*log << solver_global.step() << " " << iset << " "
-					     << nb_data()-ndata_valid << " "
-					     << rms_tres_total << " " << init_chi_total << " "
-					     << ndata_in[0] << " " << rms_tres[0] << " " << init_chi[0] << " "
-					     << ndata_in[1] << " " << rms_tres[1] << " " << init_chi[1] << " "
-					     << ndata_in[2] << " " << rms_tres[2] << " " << init_chi[2] << " "
-					     << ndata_in[3] << " " << rms_tres[3] << " " << init_chi[3] << " "
-					     << graph_time << " " << bend_time << " " 
-					     << weight_s_v << " " << weight_s_d << " "
-					     << weight_s_ad << " " << weight_s_ae << " "
-					     << wdv << " " << wdd << " " << wdad << " " << wdae << " "
-					     << nlsqr << " " << lsqr_iter << " " << lsqr_time << " "
-					     << pred_chi << " " << dv_norm << " " << dd_norm << " "
-					     << dad_norm << " " << dae_norm << " "
-					     << Lmvx << " " << Lmvy << " " << Lmvz << " " << Lmdx << " " << Lmdy << " "
-					     << Lmadx << " " << Lmady << " " << Lmadz << " "
-					     << Lmaex << " " << Lmaey << " " << Lmaez;
+					*log << "1=" << solver_global.step() << " 2=" << iset << " 3="
+					     << nb_data()-ndata_valid << " 4="
+					     << rms_tres_total << " 5=" << init_chi_total << " 6="
+					     << ndata_in[0] << " 7=" << rms_tres[0] << " 8=" << init_chi[0] << " 9="
+					     << ndata_in[1] << " 10=" << rms_tres[1] << " 11=" << init_chi[1] << " 12="
+					     << ndata_in[2] << " 13=" << rms_tres[2] << " 14=" << init_chi[2] << " 15="
+					     << ndata_in[3] << " 16=" << rms_tres[3] << " 17=" << init_chi[3] << " 18="
+					     << graph_time << " 19=" << bend_time << " 20="
+					     << weight_s_v << " 21=" << weight_s_d << " 22="
+					     << weight_s_ad << " 23=" << weight_s_ae << " 24="
+					     << wdv << " 25=" << wdd << " 26=" << wdad << " 27=" << wdae << " 28="
+					     << nlsqr << " 29=" << lsqr_iter << " 30=" << lsqr_time << " 31="
+					     << pred_chi << " 32=" << dv_norm << " 33=" << dd_norm << " 34="
+					     << dad_norm << " 35=" << dae_norm << " 36="
+					     << Lmvx << " 37=" << Lmvy << " 38=" << Lmvz << " 39=" << Lmdx << " 40=" << Lmdy << " 41="
+					     << Lmadx << " 42=" << Lmady << " 43=" << Lmadz << " 44="
+					     << Lmaex << " 45=" << Lmaey << " 46=" << Lmaez;//dv_norm, Lmvy, Lmvz
 					*log << endl;
 				    }
 				}

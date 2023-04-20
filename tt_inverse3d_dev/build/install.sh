@@ -11,9 +11,9 @@ cmake_engine="cmake" # YOU NEED CMAKE
 prof_options=""
 #intel_flags="-fp-model precise" # THIS IS FOR INTEL COMPILERS, JUST REMOVE IT IF YOU  ARE USING GNU COMPILERS
 
-impi_compile_flags=$(mpicc --compile)
+impi_compile_flags=$(mpicc -showme:compile)
 
-impi_link_flags=$(mpicc --force-link)
+impi_link_flags=$(mpicc -showme:link)
 
 flavor="Release"
 boost_root="/home/user/folder/boost_1_62_0"

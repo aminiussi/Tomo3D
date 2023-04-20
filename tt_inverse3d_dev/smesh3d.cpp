@@ -204,6 +204,8 @@ void SlownessMesh3d::set(const Array1d<double>& u) // Modified
 	      if(pgrid(i,j,k) <= 0.0){
 		cerr << "SlownessMesh3d::set: Zero or negative velocity encountered:\n";
 		cerr << "Node (i,j,k)=(" << i << "," << j << "," << k << ")\n";
+		cerr << "Node (nx,ny,nz)=(" << nx() << "," << ny() << "," << nz() << ")\n";
+		cerr << "pgrid(i,j,k)=" << pgrid(i,j,k) << "\n";
 		cerr << "Terminating.\n";
 		exit(1);
 	      }else{
@@ -226,6 +228,7 @@ void SlownessMesh3d::get(Array1d<double>& u) const // Modified
 	      if(pgrid(i,j,k) <= 0.0){
 		cerr << "SlownessMesh3d::get: Zero or negative velocity encountered:\n";
 		cerr << "Node (i,j,k)=(" << i << "," << j << "," << k << ")\n";
+		cerr << "pgrid(i,j,k)=" << pgrid(i,j,k) << "\n";
 		cerr << "Terminating.\n";
 		exit(1);
 	      }else{
@@ -248,6 +251,7 @@ void SlownessMesh3d::vget(Array1d<double>& v) const // Modified
 	      if(vgrid(i,j,k) <= 0.0){
 		cerr << "SlownessMesh3d::vget: Zero or negative velocity encountered:\n";
 		cerr << "Node (i,j,k)=(" << i << "," << j << "," << k << ")\n";
+		cerr << "pgrid(i,j,k)=" << pgrid(i,j,k) << "\n";
 		cerr << "Terminating.\n";
 		exit(1);
 	      }else{

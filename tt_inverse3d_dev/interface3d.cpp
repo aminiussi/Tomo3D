@@ -313,7 +313,7 @@ namespace details {
         }
         for (int i=1; i<=nx; ++i){
             if(fabs(x-pos[i-1])<epsilon){
-                return std::min(i, nx-1);
+                return std::min(i, nx-1);///OJO!
             }
         }
         
