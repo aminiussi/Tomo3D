@@ -451,16 +451,14 @@ int AnisotropyMesh3d::nearest(const Point3d& src) const // Modified
 void
 AnisotropyMesh3d::outMesh(ostream& os, bool out2d) const {
 
-    if(nx()>1 && !out2d)	{//out
+    if(!out2d)	{//out
 	    os << nx() << " " << ny() << " " << nz() << " "
 	       << a_water << " " << a_air << '\n';
 	    for (int i=1; i<=nx(); i++) {
 	        os << xpos(i) << " ";
 	    }
-    os << '\n';
-    }
-
-    if(nx()==1 && out2d)	{//out
+	    os << '\n';
+    }else{
 	    os << ny() << " " << nz() << " "
 	       << a_water << " " << a_air << '\n';
     }
