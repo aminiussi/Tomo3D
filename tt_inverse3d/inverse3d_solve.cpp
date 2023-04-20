@@ -548,6 +548,9 @@ TomographicInversion3d::solve(int niter)
         solver solver_global(*this,niter);
 
         while(solver_global.solving()) {
+
+        clock_t t_it1=clock();
+
             solver_global.init_step();
             
             if (is_verbose(0)) {
@@ -893,6 +896,15 @@ TomographicInversion3d::solve(int niter)
 		}
 	    }
 	    solver_global.next();
+
+            clock_t t_it2 = clock();
+            double diff=(t_it2-t_it1);
+            diff /= CLOCKS_PER_SEC;
+
+                if (is_verbose(0)){
+                        std::cerr<<"~~~~~~~~~~~~~~~ Iteration " << solver_global.step()-1 << " lasted: "<< diff <<" secs (in proc 0) ~~~~~~~~~~~~~~~ \n \n";
+                }
+
 	}
     }
 }
