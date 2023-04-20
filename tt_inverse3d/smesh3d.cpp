@@ -967,14 +967,22 @@ void SlownessMesh3d::nearest(const Interface3d& itf, std::vector<int>& inodes) c
 }
 
 void
-SlownessMesh3d::outMesh(ostream& os) const {
-    os << nx() << " " << ny() << " " << nz() << " "
-       << 1.0/p_water << " " << 1.0/p_air << '\n';
-    
-    for (int i=1; i<=nx(); i++) {
-        os << xpos(i) << " ";
+
+SlownessMesh3d::outMesh(ostream& os, bool out2d) const {
+
+    if(out2d) {
+	    os << ny() << " " << nz() << " "
+	       << 1.0/p_water << " " << 1.0/p_air << '\n';
+    }else {
+	    os << nx() << " " << ny() << " " << nz() << " "
+	       << 1.0/p_water << " " << 1.0/p_air << '\n';
+
+	    for (int i=1; i<=nx(); i++) {
+	        os << xpos(i) << " ";
+	    }
+	    os << '\n';
     }
-    os << '\n';
+
     for (int j=1; j<=ny(); j++) {
         os << ypos(j) << " ";
     }
@@ -1151,15 +1159,20 @@ void SlownessMesh3d::printVGrid(ostream& os,
 }
 
 void SlownessMesh3d::printMaskGrid(ostream& os,
-                                   const std::vector<int>& valid_node) const // Modified, used?
+                                   const std::vector<int>& valid_node, bool out2d) const // Modified, used?
 {
     assert(valid_node.size() == nb_nodes());
 
-    os << nx() << " " << ny() << " " << nz() << " "
-       << 1.0/p_water << " " << 1.0/p_air << '\n';
+    if(!out2d) {
+	    os << nx() << " " << ny() << " " << nz() << " "
+            << 1.0/p_water << " " << 1.0/p_air << '\n';
+    	    for (int i=1; i<=nx(); i++) os << xpos(i) << " ";
+    	    os << '\n';
+    }else{
+	    os << ny() << " " << nz() << " "
+            << 1.0/p_water << " " << 1.0/p_air << '\n';
+    }
 
-    for (int i=1; i<=nx(); i++) os << xpos(i) << " ";
-    os << '\n';
     for (int j=1; j<=ny(); j++) os << ypos(j) << " ";
     os << '\n';
     for (int i=1; i<=nx(); i++){
@@ -1189,20 +1202,33 @@ void SlownessMesh3d::printMaskGrid(ostream& os,
 
 // output DWS
 void SlownessMesh3d::printMaskGrid(ostream& os,
-                                   const Array1d<double>& dws) const // Modified
+                                   const Array1d<double>& dws,bool out2d) const // Modified
 {
     assert(dws.size() == nb_nodes());
 
-    int inode=1;
-    for (int i=1; i<=nx(); i++){
-        double x=xpos(i);
+    if(!out2d) {
+	    int inode=1;
+	    for (int i=1; i<=nx(); i++){
+	        double x=xpos(i);
+	        for (int j=1; j<=ny(); j++){
+	            double y=ypos(j), t=topo(i,j);
+	            for (int k=1; k<=nz(); k++){
+	                double z=zpos(k)+t;
+	                os << x << " " << y << " " << z << " " << dws(inode) << "\n";
+	                inode++;
+	            }
+	        }
+	    }
+    }else {
+        int inode=1;
         for (int j=1; j<=ny(); j++){
-            double y=ypos(j), t=topo(i,j);
+            double y=ypos(j), t=topo(1,j);
             for (int k=1; k<=nz(); k++){
                 double z=zpos(k)+t;
-                os << x << " " << y << " " << z << " " << dws(inode) << "\n";
-                inode++;
-            }
-        }
-    }
+                os << y << " " << z << " " << dws(inode) << "\n";
+	        inode++;
+		}//for
+	}//for
+   }//if
+
 }

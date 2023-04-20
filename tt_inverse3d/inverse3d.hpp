@@ -54,6 +54,7 @@ public:
     void setLSQR_TOL(double);
     void add_reflections(boost::shared_ptr<Interface3d> const& intfp);
     void doFullRefl();
+    void output2d();
     void setReflWeight(double);
 
     void tiltAngle(double);
@@ -80,7 +81,7 @@ public:
     void DampDepth(double);
     void DampAniD(double);
     void DampAniE(double);
-    void FixDamping(bool, bool, double, double, double, double);
+    void FixDamping(bool, bool, bool, double, double, double, double);
     void Squeezing(const char*);
     void SqueezingD(const char*);
     void SqueezingE(const char*);
@@ -206,9 +207,10 @@ private:
     Array1d<double> r_dt_vec, path_wt;
 
     const Interface3d *bathyp;
-    boost::shared_ptr<Interface3d> reflp;
+    boost::shared_ptr<Interface3d> reflp;//ojo
     double refl_weight;
     bool do_full_refl;
+    bool output_2d;//Estela
 
     int nnodev, my_nb_noded, my_nb_data, ndata_valid, nx, ny, nz;
     int nnoded = 0;

@@ -53,13 +53,13 @@ class AnisotropyMesh3d : public Mesh3d {
     bool inAir(const Point3d& pos) const;
 
     // output functions
-    void outMesh(ostream&) const;
+    void outMesh(ostream&, bool) const;
     void printElements(ostream&) const;
     void printAGrid(ostream&,bool) const;
     void printAGrid(ostream&,
                     double,double,double,double,double,double,double,double,double) const;
-    void printMaskGrid(ostream&, const std::vector<int>&) const;
-    void printMaskGrid(ostream&, const Array1d<double>&) const;
+    void printMaskGrid(ostream&, const std::vector<int>&, bool) const;
+    void printMaskGrid(ostream&, const Array1d<double>&, bool) const;
 
     // smoothing-related functions
     boost::optional<double> xexp(Point3d const& p, int i, int j, int k, double lx) const;

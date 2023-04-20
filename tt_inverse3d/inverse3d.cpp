@@ -31,6 +31,7 @@ TomographicInversion3d::TomographicInversion3d(boost::mpi::communicator& com,
     cg_tolerance(cg_tol), br_tolerance(br_tol),
     reflp(), anid(), anie(),
     my_nb_noded(-1), do_full_refl(false), my_nb_data(-1),
+    output_2d(false),
     nnodev(slowness_mesh().nb_nodes()),
     nx(slowness_mesh().nx()),
     ny(slowness_mesh().ny()),
@@ -411,6 +412,11 @@ void TomographicInversion3d::doFullRefl()
     my_graph_solver.do_refl_downward();
 }
 
+void TomographicInversion3d::output2d()//Estela
+{
+    output_2d = true;
+}
+
 void TomographicInversion3d::setReflWeight(double x)
 {
     if (x>0){
@@ -559,16 +565,17 @@ void TomographicInversion3d::DampAniE(double a)
 }
 
 
-void TomographicInversion3d::FixDamping(bool getanid_, bool getanie_, double v, double d, double ad, double ae)
+void TomographicInversion3d::FixDamping(bool getmesh_, bool getanid_, bool getanie_, double v, double d, double ad, double ae)
 {
 
     damping_is_fixed = true;
 
-    damp_velocity = true;
-    weight_d_v = v;
-
-    damp_depth = true;
-    weight_d_d = d;
+    if(getmesh_) {
+	    damp_velocity = true;
+	    weight_d_v = v;
+	    damp_depth = true;
+	    weight_d_d = d;
+    }
 
     if(getanid_) {
             damp_anid = true;

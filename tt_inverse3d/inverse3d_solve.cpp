@@ -481,7 +481,7 @@ TomographicInversion3d::solve(int niter)
 		 << wsad_min << " " << wsad_max << " " << dwsad << '\n'
 		 << "# smooth_anie " << smooth_anie << " "
 		 << wsae_min << " " << wsae_max << " " << dwsae << '\n';
-            if (damping_is_fixed) {//ojo: opcion -DD-DV o tb -DQ?
+            if (damping_is_fixed) {
                 *log << "# fixed_damping " << weight_d_v << " " << weight_d_d 
 		     << " " << weight_d_ad << " " << weight_d_ae << " " << '\n';
             } else {//auto-damping
@@ -715,10 +715,10 @@ TomographicInversion3d::solve(int niter)
 				double Lmvz = std::numeric_limits<double>::quiet_NaN();
 				double Lmadz = std::numeric_limits<double>::quiet_NaN();
 				double Lmaez = std::numeric_limits<double>::quiet_NaN();
-				calc_Lm(Lmvx,Lmvy,Lmvz,Lmdx,Lmdy,Lmadx,Lmady,Lmadz,Lmaex,Lmaey,Lmaez);//ojo
-				
+				calc_Lm(Lmvx,Lmvy,Lmvz,Lmdx,Lmdy,Lmadx,Lmady,Lmadz,Lmaex,Lmaey,Lmaez);
+
 				if (jumping) dmodel_total_sum += dmodel_total;
-				
+
 				// scale to slowness perturbation
 				if (!fv){
 				    Array1d<double> mv(velocity_model());
@@ -733,7 +733,7 @@ TomographicInversion3d::solve(int niter)
 					int tmp_i = tmp_nodedc[i-1];
 					md(i) += mdscale(i)*dmodel_total(tmp_i)*refl_weight;
 				    }
-				    reflp->set(md);
+				    reflp->set(md);//ojo
 				}
 				if (ani){
 				    if(!fad){
@@ -753,26 +753,29 @@ TomographicInversion3d::solve(int niter)
 					anie->set(mae);
 				    }
 				}
-				
+
 				if (printTransient || (printFinal && solver_global.last_step())){
 				    if (0 % com().size() == com().rank()) {
 					if (!fv){
-					    slowness_mesh().outMesh(*indexed_trace("smesh",  solver_global.step(), iset));
+					    slowness_mesh().outMesh(*indexed_trace("smesh",  solver_global.step(), iset),output_2d);
 					}
 				    }
 				    if (1 % com().size() == com().rank()) {
 					if (reflp && !fd){
-					    *indexed_trace("refl",  solver_global.step(), iset) << *reflp;
+
+					    if(!output_2d) *indexed_trace("refl",  solver_global.step(), iset) << *reflp;
+					    if(output_2d)reflp->outRefl(*indexed_trace("refl",  solver_global.step(), iset));//Estela
+
 					}
 				    }
 				    if (2 % com().size() == com().rank()) {
 					if (ani && !fad){
-					    anid->outMesh(*indexed_trace("anid", solver_global.step(), iset));
+					    anid->outMesh(*indexed_trace("anid", solver_global.step(), iset),output_2d);
 					}
 				    }
 				    if (3 % com().size() == com().rank()) {
 					if (ani && !fae){
-					    anie->outMesh(*indexed_trace("anie", solver_global.step(), iset));
+					    anie->outMesh(*indexed_trace("anie", solver_global.step(), iset),output_2d);
 					}
 				    }
 				    if (4 % com().size() == com().rank()) {
@@ -786,7 +789,8 @@ TomographicInversion3d::solve(int niter)
 						    if (inode<=dws.size()) dws(inode) += p->second;
 						}
 					    }
-					    slowness_mesh().printMaskGrid(*indexed_trace("dws", solver_global.step(), iset), dws);
+
+					    slowness_mesh().printMaskGrid(*indexed_trace("dws", solver_global.step(), iset), dws, output_2d);
 					}
 				    }
 				    if (5 % com().size() == com().rank()) {
@@ -800,7 +804,7 @@ TomographicInversion3d::solve(int niter)
 						    if (inode>nnodev && inode<=nnodev+dwsr.size()) dwsr(inode-nnodev) += p->second;
 						}
 					    }
-					    reflp->printMaskGridRefl(*indexed_trace("dwsr", solver_global.step(), iset), dwsr);
+					    reflp->printMaskGridRefl(*indexed_trace("dwsr", solver_global.step(), iset), dwsr, output_2d);
 					}
 				    }
 				    if (6 % com().size() == com().rank()) {
@@ -814,7 +818,7 @@ TomographicInversion3d::solve(int niter)
 						    if (inode>nnodev+nb_noded() && inode<=nnodev+nb_noded()+nnoded) dwsda(inode-nnodev-nb_noded()) += fabs(p->second);
 						}
 					    }
-					    anid->printMaskGrid(*indexed_trace("dwsad", solver_global.step(), iset), dwsda);
+					    anid->printMaskGrid(*indexed_trace("dwsad", solver_global.step(), iset), dwsda, output_2d);
 					}
 				    }
 				    if (7 % com().size() == com().rank()) {
@@ -828,7 +832,7 @@ TomographicInversion3d::solve(int niter)
 						    if (inode>nnodev+nb_noded()+nnoded && inode<=nnodev+nb_noded()+nnoded+nnodee) dwsea(inode-nnodev-nb_noded()-nnoded) += fabs(p->second);
 						}
 					    }
-					    anie->printMaskGrid(*indexed_trace("dwsae", solver_global.step(), iset), dwsea);
+					    anie->printMaskGrid(*indexed_trace("dwsae", solver_global.step(), iset), dwsea, output_2d);
 					}
 				    }
 				}
@@ -1054,7 +1058,7 @@ TomographicInversion3d::process_receiver(source_solver& locl, int ircv) const {
     }else{
 	locl.res_ttime(ircv) = obs_ttime(isrc)(ircv)-final_t;
     }
-    
+
     if (printTransient || (printFinal && locl.global.last_step())){
         typedef boost::lock_guard<boost::mutex> os_guard;
         if (my_output_level >= 2){
@@ -1086,7 +1090,7 @@ TomographicInversion3d::process_source(TomographicInversion3d::source_solver& lo
     if (is_verbose(0)){
 	cerr << "\nstart isrc=" << isrc << " nrec=" << receivers.size() << '\n';
     }
-    
+
     Point3d src3d = src(isrc);
     boost::shared_ptr<SlownessMesh3d> refr_mesh   (new SlownessMesh3d(slowness_mesh()));
     boost::shared_ptr<GraphSolver3d>  refr_solver (new GraphSolver3d(my_graph_solver, *refr_mesh));
@@ -1095,7 +1099,7 @@ TomographicInversion3d::process_source(TomographicInversion3d::source_solver& lo
 
     boost::shared_ptr<SlownessMesh3d> refl_mesh;
     boost::shared_ptr<GraphSolver3d>  refl_solver;
-    // Optimization: maybe we could start dealing with refractions 
+    // Optimization: maybe we could start dealing with refractions
     // while we do this reflection preparation ?
     if (do_full_refl) {
 	refl_mesh.reset(new SlownessMesh3d(slowness_mesh()));
@@ -1128,13 +1132,17 @@ TomographicInversion3d::process_source(TomographicInversion3d::source_solver& lo
 	} else {
 	    path_processor(locl, false)();
 	}
-        
+
     }
-    if (my_output_level >= 1){
+    if (my_output_level >= 1){//ojo, output
 	std::ofstream out(indexed_filename("tres",locl.global.step(), isrc).c_str(), std::ofstream::trunc);
 	for (int ircv = 1; ircv <= receivers.size(); ++ircv) {
 	    Point3d r = receivers(ircv);
-	    out << r.x() << '\t' << r.y() << '\t' << r.z() << '\t' << locl.res_ttime(ircv) << '\n';
+	    if(output_2d) {
+		out << r.y() << '\t' << r.z() << '\t' << locl.res_ttime(ircv) << '\n';
+	    } else {
+		out << r.x() << '\t' << r.y() << '\t' << r.z() << '\t' << locl.res_ttime(ircv) << '\n';
+	    }
 	}
     }
     if (is_verbose(0)){

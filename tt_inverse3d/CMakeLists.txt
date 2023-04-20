@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.6)
 
-project (TT_Inverse3D_dev CXX C)
+project (TT_Inverse3D CXX C)
 
 include(CTest)
 
@@ -93,11 +93,11 @@ add_library(tomo3d
   d_realft.cpp)
 target_link_libraries( tomo3d ${PARDISO_LIBS} ${Boost_LIBRARIES} ${MPI_LIBRARIES} pthread)
 
-add_executable(tt_inverse3d_dev tt_inverse3d.cpp)
-set_target_properties( tt_inverse3d_dev
+add_executable(tt_inverse3d tt_inverse3d.cpp)
+set_target_properties( tt_inverse3d
   PROPERTIES
   LINK_FLAGS "${OpenMP_CXX_FLAGS} ${MPI_LINK_FLAGS}")
-target_link_libraries( tt_inverse3d_dev tomo3d)
+target_link_libraries( tt_inverse3d tomo3d)
 
 add_executable(offline_solver offline_solver.cpp)
 set_target_properties( offline_solver

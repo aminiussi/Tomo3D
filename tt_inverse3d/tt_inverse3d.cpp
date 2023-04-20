@@ -535,6 +535,10 @@ int main(int argc, char** argv)
 	    gotError=true;
 	}
     }
+    if (!auto_damping && !fixed_damping){
+	cerr << "Some time of damping is obligatory, please add with options -T or -D. \n";
+	gotError=true;
+    }
     if (auto_damping && fixed_damping){
 	cerr << "-T and -D options are mutually exclusive.\n";
 	gotError=true;
@@ -548,6 +552,7 @@ int main(int argc, char** argv)
     if (debug_wait_asked) {
         wait_debugger();
     }
+
     namespace mpi = boost::mpi;
     mpi::environment env(argc, argv, mpi::threading::funneled);
     mpi::communicator world;
@@ -570,113 +575,176 @@ int main(int argc, char** argv)
     if (get2d3d) {	//transformacion input de tomo2d a tomo3d
 
 		if(getMesh)	{
-	                temp=meshfn;
-	                std::ifstream file_2d3d(temp);
-	                file_2d3d >> nxy >> nzz;
-       		        file_2d3d.close();
 
-                	meshfn3d = meshfn; // Vp
+	               	meshfn3d = meshfn; // Vp
                 	meshfn3d += str_add;
-	                data_2d3d new_meshfn(nxy,nzz,meshfn,meshfn3d);
-	                new_meshfn.meshfn_2d3d(cero);
-	                meshfn = meshfn3d.c_str();
+
+			if (world.rank() == 0) {
+
+		                temp=meshfn;
+		                std::ifstream file_2d3d(temp);
+		                file_2d3d >> nxy >> nzz;
+       			        file_2d3d.close();
+
+	                	data_2d3d new_meshfn(nxy,nzz,meshfn,meshfn3d);
+	                	new_meshfn.meshfn_2d3d(cero);
+			}
+
 		}
 
 		if(getData)	{
+
 	                datafn3d = datafn; // TT
 	                datafn3d += str_add;
-	                data_2d3d new_datafn(nxy,nzz,datafn,datafn3d);
-	                new_datafn.datafn_2d3d();
-	                datafn = datafn3d.c_str();
+
+			if (world.rank() == 0) {
+	                	data_2d3d new_datafn(nxy,nzz,datafn,datafn3d);
+	                	new_datafn.datafn_2d3d();
+			}
 		}
 
 		if(getCorrVel)	{
+
 	                corr_velfn3d=corr_velfn;
         	        corr_velfn3d +=str_add;
-	                data_2d3d new_corr_velfn(nxy,nzz,corr_velfn,corr_velfn3d);
-	                new_corr_velfn.corr_fn_2d3d();
-	                corr_velfn=corr_velfn3d.c_str();
+
+			if (world.rank() == 0) {
+		                data_2d3d new_corr_velfn(nxy,nzz,corr_velfn,corr_velfn3d);
+		                new_corr_velfn.corr_fn_2d3d();
+			}
+
 		}
 
 		if(getCorrDep)	{
+
 	                corr_depfn3d=corr_depfn;
 	                corr_depfn3d +=str_add;
-	                data_2d3d new_corr_depfn(nxy,nzz,corr_depfn,corr_depfn3d);
-	                new_corr_depfn.corr_depfn_2d3d();
-	                corr_depfn=corr_depfn3d.c_str();
+
+			if (world.rank() == 0) {
+		                data_2d3d new_corr_depfn(nxy,nzz,corr_depfn,corr_depfn3d);
+		                new_corr_depfn.corr_depfn_2d3d();
+			}
+
 		}
 
                 if(getRefl)     {
+
                         reflfn3d = reflfn;
                         reflfn3d += str_add;
-                        data_2d3d new_reflfn(nxy,nzz,reflfn,reflfn3d);
-                        new_reflfn.reflfn_2d3d();
-                        reflfn = reflfn3d;
+
+			if (world.rank() == 0) {
+	                        data_2d3d new_reflfn(nxy,nzz,reflfn,reflfn3d);
+	                        new_reflfn.reflfn_2d3d();
+			}
                 }
 
                 if(getDamp3d)     {
+
                         damp_velfn3d = damp_velfn;
                         damp_velfn3d += str_add;
-                        data_2d3d new_damp_velfn(nxy,nzz,damp_velfn,damp_velfn3d);
-                        new_damp_velfn.meshfn_2d3d(one);
-                        damp_velfn = damp_velfn3d.c_str();
+
+			if (world.rank() == 0) {
+	                        data_2d3d new_damp_velfn(nxy,nzz,damp_velfn,damp_velfn3d);
+        	                new_damp_velfn.meshfn_2d3d(one);
+			}
                 }
 
 
-                if(getAniD)     {//hacer
+                if(getAniD)     {//testar
+
                         anidfn3d = anidfn;
                         anidfn3d += str_add;
-                        data_2d3d new_anidfn(nxy,nzz,anidfn,anidfn3d);
-                        new_anidfn.meshfn_2d3d(cero);
-                        anidfn = anidfn3d;
+
+			if (world.rank() == 0) {
+	                        data_2d3d new_anidfn(nxy,nzz,anidfn,anidfn3d);
+        	                new_anidfn.meshfn_2d3d(cero);
+                        }
                 }
 
-                if(getAniE)     {//hacer
+                if(getAniE)     {//testar
+
                         aniefn3d = aniefn;
                         aniefn3d += str_add;
-                        data_2d3d new_aniefn(nxy,nzz,aniefn,aniefn3d);
-                        new_aniefn.meshfn_2d3d(cero);
-                        aniefn = aniefn3d;
+
+			if (world.rank() == 0) {
+	                        data_2d3d new_aniefn(nxy,nzz,aniefn,aniefn3d);
+        	                new_aniefn.meshfn_2d3d(cero);
+			}
+
                 }
 
-                if(getDamp3dD)     {//hacer
+                if(getDamp3dD)     {//testar
+
                         damp_anidfn3d = damp_anidfn;
                         damp_anidfn3d += str_add;
-                        data_2d3d new_damp_anidfn(nxy,nzz,damp_anidfn,damp_anidfn3d);
-                        new_damp_anidfn.meshfn_2d3d(one);
-                        damp_anidfn = damp_anidfn3d.c_str();
+
+			if (world.rank() == 0) {
+	                        data_2d3d new_damp_anidfn(nxy,nzz,damp_anidfn,damp_anidfn3d);
+        	                new_damp_anidfn.meshfn_2d3d(one);
+			}
                 }
 
-                if(getDamp3dE)     {//hacer
+                if(getDamp3dE)     {//testar
+
                         damp_aniefn3d = damp_aniefn;
                         damp_aniefn3d += str_add;
-                        data_2d3d new_damp_aniefn(nxy,nzz,damp_aniefn,damp_aniefn3d);
-                        new_damp_aniefn.meshfn_2d3d(one);
-                        damp_aniefn = damp_aniefn3d.c_str();
+
+			if (world.rank() == 0) {
+	                        data_2d3d new_damp_aniefn(nxy,nzz,damp_aniefn,damp_aniefn3d);
+        	                new_damp_aniefn.meshfn_2d3d(one);
+			}
+
                 }
 
-                if(getCorrAniD)     {//hacer
+                if(getCorrAniD)     {//testar
+
 	                corr_anidfn3d=corr_anidfn;
         	        corr_anidfn3d +=str_add;
-	                data_2d3d new_corr_anidfn(nxy,nzz,corr_anidfn,corr_anidfn3d);
-	                new_corr_anidfn.corr_fn_2d3d();//
-	                corr_anidfn=corr_anidfn3d.c_str();
+
+			if (world.rank() == 0) {
+		                data_2d3d new_corr_anidfn(nxy,nzz,corr_anidfn,corr_anidfn3d);
+		                new_corr_anidfn.corr_fn_2d3d();
+			}
                 }
 
-                if(getCorrAniE)     {//hacer
+                if(getCorrAniE)     {//testar
+
 	                corr_aniefn3d=corr_aniefn;
         	        corr_aniefn3d +=str_add;
-	                data_2d3d new_corr_aniefn(nxy,nzz,corr_aniefn,corr_aniefn3d);
-	                new_corr_aniefn.corr_fn_2d3d();//
-	                corr_aniefn=corr_aniefn3d.c_str();
+
+			if (world.rank() == 0) {
+		                data_2d3d new_corr_aniefn(nxy,nzz,corr_aniefn,corr_aniefn3d);
+		                new_corr_aniefn.corr_fn_2d3d();
+			}
+
                 }
 
+	    world.barrier();
+
+	    if(getMesh)		meshfn = meshfn3d.c_str();
+	    if(getData)		datafn = datafn3d.c_str();
+	    if(getCorrVel)	corr_velfn=corr_velfn3d.c_str();
+	    if(getCorrDep)	corr_depfn=corr_depfn3d.c_str();
+            if(getRefl)		reflfn = reflfn3d;
+            if(getDamp3d)       damp_velfn = damp_velfn3d.c_str();
+            if(getAniE)		aniefn = aniefn3d;
+            if(getAniD)		anidfn = anidfn3d;
+            if(getDamp3dE)	damp_aniefn = damp_aniefn3d.c_str();
+            if(getDamp3dD)	damp_anidfn = damp_anidfn3d.c_str();
+            if(getCorrAniE)	corr_aniefn=corr_aniefn3d.c_str();
+            if(getCorrAniD)	corr_anidfn=corr_anidfn3d.c_str();
+
+
     }
+
+
 
     SlownessMesh3d smesh(meshfn);
 
     TomographicInversion3d inv(world,smesh,datafn,xorder,yorder,zorder,crit_len,
 			       nintp,bend_cg_tol,bend_br_tol);
+
+    if(get2d3d)	inv.output2d();
 
     inv.set_output_prefix(output_prefix);
 
@@ -767,7 +835,7 @@ int main(int argc, char** argv)
         if (max_dae>0) inv.DampAniE(max_dae);
     }else if (fixed_damping){
         if (wdv>=0 && wdd>=0 && wdad>=0 && wdae>=0){//esto siempre es asi
-		inv.FixDamping(getAniE,getAniD,wdv,wdd,wdad,wdae);//damping fijo, opcion -DD -DV o tb -DQ??? ojo duda
+		inv.FixDamping(getMesh,getAniE,getAniD,wdv,wdd,wdad,wdae);//damping fijo, opcion -DD -DV, tb -DQ
         	if (getDamp3d)  inv.Squeezing(damp_velfn);//error due to upperleft() segmentation fault
         	if (getDamp3dD) inv.SqueezingD(damp_anidfn);//""
         	if (getDamp3dE) inv.SqueezingE(damp_aniefn);//""

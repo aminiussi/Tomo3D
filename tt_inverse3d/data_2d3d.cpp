@@ -11,7 +11,7 @@ data_2d3d :: data_2d3d(int nn, int nzz, std::string const& input2D, std::string 
 	ny=nn;
 	nz=nzz;
 	dif=0.;
-	plane=0;//=1?
+	plane=0;
 	ns=0,npicks=0,raycode=0;
 	vw=0,va=0,tt=0,dt=0;
 	ss=0,sZ=0,rr=0,rZ=0;

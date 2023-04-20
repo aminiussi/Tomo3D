@@ -45,8 +45,9 @@ public:
 
     friend ostream&
     operator<<(ostream&, const Interface3d&);
-    void printMaskGridRefl(ostream&, const Array1d<double>&) const;
-    
+    void printMaskGridRefl(ostream&, const Array1d<double>&, bool) const;
+    void outRefl(ostream&) const;
+
     bool xflat() const { return xpos.size() == 1; }
     bool yflat() const { return ypos.size() == 1; }
 private:

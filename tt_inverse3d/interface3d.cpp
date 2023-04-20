@@ -32,6 +32,9 @@ Interface3d::Interface3d(const SlownessMesh3d& smesh) //modified
 Interface3d::Interface3d(std::string const& fn) //modified
 {
     ifstream in(fn.c_str());
+
+//    cerr<< "OJO!!Interface3d:: opens "<<fn<<"\n";//it opens reflector file
+
     if(!in){
 	cerr<< "Interface3d::cannot open "<<fn<<"\n";
 	exit(1);
@@ -59,7 +62,6 @@ Interface3d::Interface3d(std::string const& fn) //modified
 	    N++;
 	}
     }
-
     int icell=1;
     for (int i=1; i<nxr; i++){
 	for(int j=1; j<nyr; j++){
@@ -427,20 +429,41 @@ operator<<(ostream& os, Interface3d const& itf)
     }
     return os;
 }
-    
+
 // output DWS for reflector
 void Interface3d::printMaskGridRefl(ostream& os,
-                                   const Array1d<double>& dwsr) const // Modified
+                                   const Array1d<double>& dwsr, bool out2d) const // Modified
 {
     assert(dwsr.size() == nnodes);
 
-    int inode=1;
-    for (int i=1; i<=xpos.size(); i++){
-        double x=xpos[i-1];
+   if(out2d) {
+	int inode=1;
         for (int j=1; j<=ypos.size(); j++){
             double y=ypos[j-1];
-	    os << x << " " << y << " " << dwsr(inode) << "\n";
+	    os << y << " " << dwsr(inode) << "\n";
 	    inode++;
 	}
-    }
+  }else {
+	int inode=1;
+	for (int i=1; i<=xpos.size(); i++){
+		double x=xpos[i-1];
+	        for (int j=1; j<=ypos.size(); j++){
+	        	double y=ypos[j-1];
+	        	os << x << " " << y << " " << dwsr(inode) << "\n";
+			inode++;
+		}
+	}
+  }
+
+}
+
+void
+Interface3d::outRefl(ostream& os) const {
+	int i=1;
+        for (int j=1; j<=ypos.size(); j++){
+            double y=ypos[j-1];
+            double z=zpos(i,j);
+            os << y << " " << z << "\n";
+        }
+
 }
